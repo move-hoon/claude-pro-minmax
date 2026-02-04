@@ -1,0 +1,43 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Personal session files (Exclude all except examples/READMEs)
+.claude/sessions/*
+!.claude/sessions/README.md
+!.claude/sessions/README.ko.md
+!.claude/sessions/2025-01-27-auth-jwt-refresh.md
+!.claude/settings.local.json
+.claude/logs/*.log
+
+# Node
+node_modules/
+
+# Secrets
+.env
+.env.*
+secrets/
+
+# MCP symlink (created by install.sh)
+.mcp.json
+
+# Temporary & Backup files
+*.bak
+*.tmp
+*.swp
+*~
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test coverage & results
+coverage/
+.nyc_output/

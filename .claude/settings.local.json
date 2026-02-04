@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(tree:*)",
+      "Bash(du:*)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "mcp__perplexity__perplexity_reason",
+      "Bash(chmod:*)",
+      "Bash(bash:*)",
+      "Skill(review)",
+      "Bash(done)",
+      "Bash(if [ -d \".git\" ])",
+      "Bash(then git status)",
+      "Bash(else echo \"Not a git repository\")",
+      "Bash(fi)",
+      "Bash(ln:*)",
+      "Bash(test:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "sequential-thinking",
+    "context7",
+    "perplexity"
+  ]
+}

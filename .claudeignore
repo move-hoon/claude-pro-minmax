@@ -1,0 +1,17 @@
+# Exclude all README and documentation files from agent parsing (Recursive)
+**/README*.md
+**/README*.ko.md
+**/USER-MANUAL*.md
+**/USER-MANUAL*.ko.md
+
+# Exclude documentation directories
+docs/
+**/docs/
+**/test-results/
+**/build/
+**/dist/
+node_modules/
+.git/
+.idea/
+.vscode/
+*.log
