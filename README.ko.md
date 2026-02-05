@@ -30,12 +30,12 @@ mgrep install-claude-code
 brew install jq   # macOS (Linux: sudo apt-get install jq)
 ```
 
-### 한 줄 설치
+### 2. 한 줄 설치
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/move-hoon/claude-pro-minmax/main/install.sh)"
 ```
 
-### 설치 후 설정 (선택 사항)
+### 3. 설치 후 설정 (선택 사항)
 **설치 스크립트 실행 중 Perplexity API 키 입력을 요청합니다.**
 설치 시 건너뛰었다면 나중에 수동으로 설정할 수 있습니다:
 1. `~/.claude.json` 파일을 엽니다.
@@ -55,6 +55,9 @@ brew install jq   # macOS (Linux: sudo apt-get install jq)
 > - **Context7**: 고급 문서 조회 및 컨텍스트 관리 도구
 
 > **Note:** 설치 스크립트가 기존 `~/.claude` 설정을 자동으로 백업(`~/.claude-backup-{timestamp}`)합니다.
+
+### 4. 프로젝트 초기화
+> **Tip:** `claude` 실행 전, `~/.claude/project-templates/`를 참고하여 `.claude/CLAUDE.md`와 `settings.json`을 먼저 설정하세요. 그래야 최적화가 처음부터 적용됩니다.
 
 ---
 
@@ -144,6 +147,8 @@ gantt
 ```
 
 ---
+
+
 
 ## 🚀 빠른 시작 (Quick Start)
 

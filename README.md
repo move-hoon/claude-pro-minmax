@@ -31,12 +31,12 @@ mgrep install-claude-code
 brew install jq   # macOS (Linux: sudo apt-get install jq)
 ```
 
-### One-Line Install
+### 2. One-Line Install
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/move-hoon/claude-pro-minmax/main/install.sh)"
 ```
 
-### Post-Install Configuration (Optional)
+### 3. Post-Install Configuration (Optional)
 **The installation script will ask for your Perplexity API Key.**
 If you skipped it during installation, you can set it up manually:
 1. Open `~/.claude.json`.
@@ -56,6 +56,9 @@ If you skipped it during installation, you can set it up manually:
 > - **Context7**: Advanced documentation fetching and context management.
 
 > **Note:** The installation script automatically backs up your existing `~/.claude` settings (`~/.claude-backup-{timestamp}`).
+
+### 4. Project Initialization
+> **Tip:** Before running `claude`, set up `.claude/CLAUDE.md` and `.claude/settings.json` by referencing the templates in `~/.claude/project-templates/`. This ensures optimizations are active from the start.
 
 ---
 
@@ -145,6 +148,8 @@ gantt
 ```
 
 ---
+
+
 
 ## 🚀 Quick Start
 
