@@ -18,10 +18,5 @@
       "Bash(test:*)"
     ]
   },
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "sequential-thinking",
-    "context7",
-    "perplexity"
-  ]
+  "enableAllProjectMcpServers": true
 }
