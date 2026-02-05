@@ -31,20 +31,29 @@ mgrep install-claude-code
 brew install jq   # macOS (Linux: sudo apt-get install jq)
 ```
 
-### 2. CPMM Installation
-
-1. **Perplexity API Key Setup (Required)**:
-   To use the `perplexity` tool, open the `.claude.json` file before installation and replace `"YOUR_API_KEY_HERE"` with your API key.
-   **If you don't have a key, you must delete the entire `perplexity` section to avoid errors.** (e.g., Delete the entire `"mcpServers"` > `"perplexity"` block in the `.claude.json` file)
-
-2. **Run Installation Script**:
+### One-Line Install
 ```bash
-git clone https://github.com/move-hoon/claude-pro-minmax.git
-cd pro-plan-claude-code
-# Edit .claude.json (Enter API key or delete section)
-vi .claude.json 
-bash install.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/move-hoon/claude-pro-minmax/main/install.sh)"
 ```
+
+### Post-Install Configuration (Optional)
+**The installation script will ask for your Perplexity API Key.**
+If you skipped it during installation, you can set it up manually:
+1. Open `~/.claude.json`.
+2. Add the following to the `mcpServers` object:
+   ```json
+   "perplexity": {
+     "command": "npx",
+     "args": ["-y", "@perplexity-ai/mcp-server"],
+     "env": {
+       "PERPLEXITY_API_KEY": "YOUR_API_KEY_HERE"
+     }
+   }
+   ```
+
+> **Other included MCP servers (Enabled by default):**
+> - **Sequential Thinking**: Powerful reasoning tool for complex logic.
+> - **Context7**: Advanced documentation fetching and context management.
 
 > **Note:** The installation script automatically backs up your existing `~/.claude` settings (`~/.claude-backup-{timestamp}`).
 
@@ -190,7 +199,7 @@ Full command list for more sophisticated tasks or session management.
 | Command | Description | Recommended Situation |
 | :--- | :--- | :--- |
 | **🧠 Deep Execution** | | |
-| `/dplan [task]` | **Sonnet** + Search (Perplexity) | Library comparison, latest tech research (Deep Research) |
+| `/dplan [task]` | **Sonnet** + Perplexity, Sequential Thinking, Context7 | Library comparison, latest tech research (Deep Research) |
 | `/do-sonnet` | Execute directly with **Sonnet** | Manual escalation when Haiku keeps failing |
 | `/do-opus` | Execute directly with **Opus** | Resolving extremely complex problems (Cost caution) |
 | **💾 Session/Context** | | |
@@ -230,13 +239,8 @@ This project provides detailed documentation for each component. Refer to the li
 
 ## 📂 Project Structure
 
-
-
 <details>
-
 <summary><strong>📁 View File Tree (Click to Expand)</strong></summary>
-
-
 
 ```text
 claude-pro-devkit
@@ -319,12 +323,9 @@ claude-pro-devkit
 └── project-templates/          # Language and Framework Templates
     ├── backend/                # Backend project template
     └── frontend/               # Frontend project template
-
 ```
 
 </details>
-
-
 
 ## Supported Runtimes
 
@@ -390,7 +391,7 @@ A: macOS and Linux are supported. Windows is available through WSL.
 <details>
 <summary><strong>Q: Why not use Opus for all tasks?</strong></summary>
 
-A: Looking at API pricing (reflecting compute cost), Opus is much more expensive than Sonnet or Haiku. While the exact Pro Plan quota impact is not public, using Opus for all tasks would deplete the quota much faster. Explicit model selection (`/do-opus`) is used to ensure awareness when using expensive models.
+A: API pricing (reflecting compute cost), Opus is much more expensive than Sonnet or Haiku. While the exact Pro Plan quota impact is not public, using Opus for all tasks would deplete the quota much faster. Explicit model selection (`/do-opus`) is used to ensure awareness when using expensive models.
 </details>
 
 ---

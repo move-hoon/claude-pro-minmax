@@ -30,20 +30,29 @@ mgrep install-claude-code
 brew install jq   # macOS (Linux: sudo apt-get install jq)
 ```
 
-### 2. CPMM 설치
-
-1. **Perplexity API 키 설정 (필수)**:
-   `perplexity` 도구를 사용하려면 설치 전에 `.claude.json` 파일을 열고 `"YOUR_API_KEY_HERE"` 부분을 본인의 API 키로 교체하세요.
-   **키가 없다면 `perplexity` 섹션 전체를 삭제해야 오류가 발생하지 않습니다.** (예: `.claude.json` 파일 내 `"mcpServers"` > `"perplexity"` 블록 전체 삭제)
-
-2. **설치 스크립트 실행**:
+### 한 줄 설치
 ```bash
-git clone https://github.com/move-hoon/claude-pro-minmax.git
-cd pro-plan-claude-code
-# .claude.json 수정 (API 키 입력 또는 섹션 삭제)
-vi .claude.json 
-bash install.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/move-hoon/claude-pro-minmax/main/install.sh)"
 ```
+
+### 설치 후 설정 (선택 사항)
+**설치 스크립트 실행 중 Perplexity API 키 입력을 요청합니다.**
+설치 시 건너뛰었다면 나중에 수동으로 설정할 수 있습니다:
+1. `~/.claude.json` 파일을 엽니다.
+2. `mcpServers` 객체 안에 다음 내용을 추가하세요:
+   ```json
+   "perplexity": {
+     "command": "npx",
+     "args": ["-y", "@perplexity-ai/mcp-server"],
+     "env": {
+       "PERPLEXITY_API_KEY": "YOUR_API_KEY_HERE"
+     }
+   }
+   ```
+
+> **함께 포함된 MCP 서버 (기본 활성화):**
+> - **Sequential Thinking**: 복잡한 로직 처리를 위한 강력한 추론 도구
+> - **Context7**: 고급 문서 조회 및 컨텍스트 관리 도구
 
 > **Note:** 설치 스크립트가 기존 `~/.claude` 설정을 자동으로 백업(`~/.claude-backup-{timestamp}`)합니다.
 
@@ -189,13 +198,13 @@ flowchart LR
 | 명령어 | 설명 | 추천 상황 |
 | :--- | :--- | :--- |
 | **🧠 심층 실행** | | |
-| `/dplan [작업]` | **Sonnet** + 검색(Perplexity) | 라이브러리 비교, 최신 기술 조사 (심층 연구) |
+| `/dplan [작업]` | **Sonnet** + Perplexity, Sequential Thinking, Context7 | 라이브러리 비교, 최신 기술 조사 (심층 연구) |
 | `/do-sonnet` | **Sonnet**으로 직접 실행 | Haiku가 계속 실패할 때 수동 격상 |
 | `/do-opus` | **Opus**로 직접 실행 | 매우 복잡한 문제 해결 (비용 주의) |
 | **💾 세션/컨텍스트** | | |
 | `/session-save` | 세션 요약 및 저장 | 작업 중단 시 (시크릿 자동 제거) |
 | `/session-load` | 세션 불러오기 | 이전 작업 재개 |
-| `/compact-phase` | 컨텍스트 단계별 압축 | 세션 중간에 토큰 정리 필요 시 |
+| `/compact-phase` | 단계별 컨텍스트 압축 | 세션 중간에 토큰 정리 필요 시 |
 | `/load-context` | 컨텍스트 템플릿 로드 | 프론트/백엔드 초기 설정 시 |
 | **🛠️ 유틸리티** | | |
 | `/learn` | 패턴 학습 및 저장 | 자주 반복되는 오류나 선호 스타일 등록 |
@@ -267,7 +276,7 @@ claude-pro-devkit
 │   │   ├── analyze-failures.md # 도구 실패 로그 분석
 │   │   └── llms-txt.md         # LLM 최적화 문서 조회
 │   ├── rules/                  # 행동 규칙
-│   │   ├── critical-actions.md # 위험 명령어 차단 (rm -rf, git push -f 등)
+│   │   ├── critical-actions.md # 위험 명령어 차단 (rm -rf, git push -f, etc.)
 │   │   ├── code-style.md       # 코딩 컨벤션 및 표준
 │   │   ├── security.md         # 보안 모범 사례
 │   │   └── language.md         # 언어 제약 (예: 한국어 사용)
@@ -316,6 +325,7 @@ claude-pro-devkit
     ├── backend/                # 백엔드 프로젝트 템플릿
     └── frontend/               # 프론트엔드 프로젝트 템플릿
 ```
+
 </details>
 
 ## 지원 런타임
