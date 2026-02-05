@@ -14,7 +14,7 @@
                 "@upstash/context7-mcp"
             ]
         },
-        "perplexity": {
+        "_perplexity_disabled_by_default": {
             "command": "npx",
             "args": [
                 "-y",
