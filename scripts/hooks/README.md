@@ -67,7 +67,7 @@ flowchart TB
 | `post-edit-format.sh` | PostToolUse | Auto-format edited files | Local (zero) |
 | `compact-suggest.sh` | PostToolUse | Suggest /compact at 50 tool calls | Local (zero), suggestion message minimal |
 | `notification.sh` | Notification | Desktop alert on permission/idle | Local (zero) |
-| `session-start.sh` | SessionStart | Env setup + session notify (opt-in) | Local (zero), notification minimal |
+| `session-start.sh` | SessionStart | Env setup + budget reminder + session notify | Local (zero), ~40 input tokens for budget context |
 | `session-cleanup.sh` | SessionEnd | Scrub secrets + save session summary | Local (zero) |
 | `retry-check.sh` | Stop | Enforce 2-retry cap (builder only) | Local (zero), escalation message if triggered |
 | `stop-collect-context.sh` | Stop | Collect failure contexts (optional) | Local (zero) |

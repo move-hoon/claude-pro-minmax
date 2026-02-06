@@ -49,7 +49,7 @@ runtime/
 | `hooks/post-edit-format.sh` | PostToolUse | 편집된 파일 자동 포맷 | 로컬 (무료) |
 | `hooks/compact-suggest.sh` | PostToolUse | 50회 호출 시 /compact 제안 | 로컬 (무료), 제안 메시지는 최소 |
 | `hooks/notification.sh` | Notification | 데스크톱 알림 | 로컬 (무료) |
-| `hooks/session-start.sh` | SessionStart | 환경변수 설정 + 세션 알림 | 로컬 (무료), 알림은 최소 |
+| `hooks/session-start.sh` | SessionStart | 환경변수 설정 + 예산 알림 + 세션 알림 | 로컬 (무료), 예산 컨텍스트 ~40 입력 토큰 |
 | `hooks/session-cleanup.sh` | SessionEnd | 세션에서 비밀 정보 제거 | 로컬 (무료) |
 | `hooks/retry-check.sh` | Stop | 연속 2회 실패 시 차단 (builder) | 로컬 (무료), 에스컬레이션 메시지 |
 | `hooks/readonly-check.sh` | PreToolUse | 읽기 전용 (reviewer) | 로컬 (무료), 차단 시 메시지 |

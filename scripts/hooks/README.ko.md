@@ -67,7 +67,7 @@ flowchart TB
 | `post-edit-format.sh` | PostToolUse | 편집된 파일 자동 포맷 | 로컬 (무료) |
 | `compact-suggest.sh` | PostToolUse | 50번 도구 호출 시 /compact 제안 | 로컬 (무료), 제안 메시지는 최소 |
 | `notification.sh` | Notification | 권한/입력 대기 시 데스크톱 알림 | 로컬 (무료) |
-| `session-start.sh` | SessionStart | 환경변수 설정 + 세션 알림 (opt-in) | 로컬 (무료), 알림은 최소 |
+| `session-start.sh` | SessionStart | 환경변수 설정 + 예산 알림 + 세션 알림 | 로컬 (무료), 예산 컨텍스트 ~40 입력 토큰 |
 | `session-cleanup.sh` | SessionEnd | 비밀 정보 제거 + 세션 요약 저장 | 로컬 (무료) |
 | `retry-check.sh` | Stop | 연속 2회 실패 시 차단 (builder만) | 로컬 (무료), 에스컬레이션 메시지 |
 | `stop-collect-context.sh` | Stop | 실패 컨텍스트 수집 (선택 사항) | 로컬 (무료) |

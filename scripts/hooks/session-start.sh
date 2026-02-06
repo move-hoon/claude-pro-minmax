@@ -57,4 +57,14 @@ EOF
   fi
 fi
 
+# 4. Message budget reminder (always-on, ~40 tokens)
+cat <<'BUDGET'
+{
+  "hookSpecificOutput": {
+    "hookEventName": "SessionStart",
+    "additionalContext": "📊 Pro Plan: ~45 msg/5h. Default: /do (2 msg batch). /plan = 6+ msg (use for 4+ files). Model cost: Haiku=1x, Sonnet=3x, Opus=5x. Output costs 5x Input."
+  }
+}
+BUDGET
+
 exit 0

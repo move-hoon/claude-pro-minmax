@@ -49,7 +49,7 @@ runtime/
 | `hooks/post-edit-format.sh` | PostToolUse | Auto-format edited files | Local (zero) |
 | `hooks/compact-suggest.sh` | PostToolUse | Suggest /compact at 50 calls | Local (zero), suggestion message minimal |
 | `hooks/notification.sh` | Notification | Desktop alerts | Local (zero) |
-| `hooks/session-start.sh` | SessionStart | Env setup + session notify | Local (zero), notification minimal |
+| `hooks/session-start.sh` | SessionStart | Env setup + budget reminder + session notify | Local (zero), ~40 input tokens for budget context |
 | `hooks/session-cleanup.sh` | SessionEnd | Scrub secrets from sessions | Local (zero) |
 | `hooks/retry-check.sh` | Stop | 2-retry cap (builder) | Local (zero), escalation message if triggered |
 | `hooks/readonly-check.sh` | PreToolUse | Read-only (reviewer) | Local (zero), blocking message if triggered |
