@@ -15,9 +15,9 @@ A Claude Code configuration optimized for Pro Plan constraints.
 
 > [!TIP]
 > **🚀 3-Second Summary: Why use this?**
-> 1.  **Quota Protection:** Prevents mindless parallel execution and enforces **sequential execution** to save tokens.
-> 2.  **Cost Optimization:** Uses a combination of **Haiku (Implementation) + Sonnet (Design)** instead of the expensive Opus.
-> 3.  **Zero-Cost Automation:** Provides safety guards with **11 local hooks** that don't use the API.
+> 1.  **Model Cost Control:** Uses **Haiku (1/5 cost)** for implementation, **Sonnet** for design — not expensive Opus.
+> 2.  **Output Tax Awareness:** Agent response budgets + CLI filtering cut output tokens (which cost **5x** input).
+> 3.  **Zero-Cost Automation:** **11 local hooks** that enforce safety without using the API.
 
 ---
 
@@ -74,7 +74,7 @@ Claude Pro Plan has constraints that fundamentally change how you should use Cla
 - **Message-Based Quota (Length-Sensitive)**: As the conversation gets longer (as context accumulates), the quota deducted per message increases exponentially. ([Claude Help Center](https://support.anthropic.com/en/articles/8325606-what-is-claude-pro))
 - **Weekly Limits**: Additional weekly caps are applied to heavy users.
 
-The original [everything-claude-code](https://github.com/affaan-m/everything-claude-code) is a powerful tool optimized for the near-unlimited **Max Plan** environment. However, blindly following "high-output" patterns like parallel agents or multi-instances on the **Pro Plan** will lead to rapid quota depletion due to acute context accumulation.
+The original [everything-claude-code](https://github.com/affaan-m/everything-claude-code) is a powerful tool optimized for the near-unlimited **Max Plan** environment. However, using it unmodified on the **Pro Plan** wastes quota — expensive models (Opus) for simple tasks, verbose agent outputs, and unnecessary message round-trips all burn through your 5-hour budget.
 
 This project maintains powerful features while redesigning the architecture to fit Pro Plan constraints.
 
@@ -88,28 +88,29 @@ This project maintains powerful features while redesigning the architecture to f
 This configuration is designed to extend productive work time by reducing Quota consumption per task. The goal is not "limit bypass," but **resource efficiency optimization** to work longer without exhausting the allocation.
 
 ### 2. Approach
-While Anthropic hasn't disclosed the exact algorithm, Quota consumption is affected by the following three factors. This project optimizes all of them.
+While Anthropic hasn't disclosed the exact algorithm, Quota consumption is affected by the following factors. This project optimizes all of them through one principle: **Maximum Value Per Message.**
 
-* **Context Size (Input Tokens):** Deduplication through sequential execution.
-* **Response Length (Output Tokens):** Reduction via CLI filtering.
-* **Model Type (Compute Cost):** Strategic model selection.
+* **Model Cost (Primary — 5x):** Haiku costs 1/5 of Opus (API pricing). Use the cheapest model that can do the job.
+* **Output Tokens (High Impact — 5x):** Output costs 5x Input (API pricing). Strict response budgets on every agent.
+* **Message Count (Direct):** Fewer messages = less quota. Batch operations (plan+build+verify) in a single `/do` call.
+* **CLI Filtering:** `jq`, `mgrep` reduce tool output tokens, shrinking both input and output.
 
-### 3. Execution Strategy: Atomic Workflow & Sequential Execution
+### 3. Execution Strategy: Value-First Workflow
 
-1.  **Atomic Task Execution**
-    * Each task completes one full cycle. (Plan → Build → Review → Save)
-    * Executes an agent once per phase (no iterative re-calls).
-    * Moves cleanly to the next task after cycle completion.
+1.  **Default: Batch Execution (`/do`)**
+    * Simple tasks (1-3 files): `/do` handles plan+build+verify in one shot.
+    * No planner overhead. No human confirmation between phases.
+    * **Result: 2 messages** (user request + Claude response) vs 6+ with sequential pipeline.
 
-2.  **Cost Minimization per Task**
-    * `@builder` (Haiku): Handles implementation (lowest resource consumption based on API pricing).
+2.  **Optional: Sequential Pipeline (`/plan`)**
+    * Medium-to-complex tasks (4+ files): `/plan` → `@builder` → `@reviewer`.
+    * Use when you need human checkpoints between phases.
+    * Use when the planning step itself requires validation before building.
+
+3.  **Cost Minimization per Task**
+    * `@builder` (Haiku): Handles implementation (1/5 cost of Opus).
     * `@planner` (Sonnet): Architecture design (balanced capability and cost).
-    * **Opus**: Escalation only when necessary (most expensive based on API pricing).
-
-3.  **Context Size Reduction**
-    * **Sequential Execution:** Prevents context duplication by running only one agent at a time. (Prohibits 3~4 parallel executions)
-    * **Interruptible:** Can be stopped at any time between tasks.
-    * **CLI Filtering:** Drastically reduces tool output tokens.
+    * **Opus**: Escalation only — explicit `/do-opus` makes cost visible.
 
 4.  **Safe Escalation Path (Safety Ladder)**
     * Haiku failure (after 2 retries) → Escalate to Sonnet (`/do-sonnet`).
@@ -121,35 +122,43 @@ While Anthropic hasn't disclosed the exact algorithm, Quota consumption is affec
 ## 📊 Results and Comparison
 
 **What this configuration enables:**
-✅ Significantly longer sessions compared to parallel execution.
-✅ Predictable usage patterns (ease of task planning).
-✅ High success rate through strategic escalation.
+✅ Significantly longer sessions through model cost optimization (Haiku = 1/5 Opus).
+✅ Fewer messages per task through batch execution (`/do`).
+✅ Reduced output tokens through strict agent response budgets.
 
 > [!NOTE]
-> **Note:** Anthropic's exact Quota algorithm is private. This configuration is an optimization based on API pricing and token patterns; actual results may vary depending on task complexity.
+> **Note:** Anthropic's exact Quota algorithm is private. This configuration optimizes based on API pricing and verified cost factors; actual results may vary depending on task complexity.
 
-### Quota Exhaustion Simulation
+### Cost Comparison: Batch vs Sequential
+
+> The real savings come from **sending fewer, cheaper messages**, not from execution order.
 
 ```mermaid
-gantt
-    title ⚡️ Quota Consumption: Parallel (Burst) vs Sequential (Efficient)
-    dateFormat HH:mm
-    axisFormat %H:%M
-    todayMarker off
+flowchart LR
+    subgraph "🟢 Batch (/do) — 2 messages"
+        U1[User: /do task] --> C1[Claude: plan+build+verify]
+        C1 -.- R1[Total: 2 msg]
+    end
 
-    section 🔴 Existing (Parallel Execution)
-    Agent 1 (Sonnet)      :crit, a1, 00:00, 45m
-    Agent 2 (Haiku)       :crit, a2, 00:00, 45m
-    Agent 3 (Reviewer)    :crit, a3, 00:00, 45m
-    💥 Quota Depleted (45 min) :milestone, 00:45, 0m
+    subgraph "🔴 Sequential Pipeline — 6+ messages"
+        U2[User: /plan] --> P[Planner output]
+        P --> U3[User: confirms]
+        U3 --> B[Builder output]
+        B --> U4[User: /review]
+        U4 --> RV[Reviewer output]
+        RV -.- R2[Total: 6+ msg]
+    end
 
-    section 🟢 CPMM (Sequential Execution)
-    Task 1 (Plan+Build)   :active, s1, 00:00, 1h
-    Task 2 (Refactor)     :s2, after s1, 1h
-    Task 3 (Test+Fix)     :s3, after s2, 1h
-    Task 4 (New Feature)  :s4, after s3, 1h
-    ✅ 5-Hour Survival Complete :milestone, 05:00, 0m
+    style R1 fill:#c8e6c9,stroke:#2e7d32
+    style R2 fill:#ffcdd2,stroke:#b71c1c
 ```
+
+| Factor | Measured Impact | Mechanism |
+|--------|----------------|-----------|
+| **Model Selection** | **5x cost reduction** | Haiku ($1/MTok) vs Opus ($5/MTok) — API pricing |
+| **Output Budget** | **~60% output reduction** | Agent response limits (builder: 5 lines, reviewer: 1 line PASS) |
+| **Batch Execution** | **~3x fewer messages** | `/do` = 2 msg vs sequential pipeline = 6+ msg |
+| **CLI Filtering** | **~50% tool output reduction** | `jq`, `mgrep` reduces input tokens from tool results |
 
 ---
 
@@ -214,7 +223,7 @@ Full command list for more sophisticated tasks or session management.
 | **💾 Session/Context** | | |
 | `/session-save` | Summarize and save session | When pausing work (Auto-removal of secrets) |
 | `/session-load` | Load session | Resuming previous work |
-| `/compact-phase` | Step-by-step context compaction | When token cleanup is needed mid-session |
+| `/compact-phase` | Step-by-step context compaction | When context cleanup is needed mid-session |
 | `/load-context` | Load context templates | Initial setup for frontend/backend |
 | **🛠️ Utility** | | |
 | `/learn` | Learn and save patterns | Registering frequently recurring errors or preferred styles |
@@ -353,12 +362,12 @@ To add a new runtime, copy and implement `scripts/runtime/adapters/_template.sh`
 <details>
 <summary><strong>Q: How does this configuration optimize the Pro Plan quota?</strong></summary>
 
-A: Anthropic's exact quota algorithm is not public. However, optimization is based on the following:
-- **API Price** (reflecting compute cost): Haiku is much cheaper than Sonnet/Opus.
-- **Token Usage Patterns**: Reduction of input/output tokens through CLI filtering and hooks.
-- **Sequential Execution**: Prevents simultaneous quota depletion by multiple agents.
+A: Anthropic's exact quota algorithm is not public. Optimization is based on three pillars:
+- **Model Cost** (verified): Haiku is 1/5 the price of Opus per API pricing.
+- **Output Reduction** (verified): Output tokens cost 5x input. Agent response budgets + CLI filtering reduce output.
+- **Message Efficiency**: `/do` batches plan+build+verify into a single response (2 messages vs 6+ in sequential pipeline).
 
-It's similar to fuel efficiency: exact mileage cannot be guaranteed, but using a smaller engine (Haiku) for most tasks and avoiding high-speed driving (parallel execution) can increase driving distance.
+For tasks where you need human checkpoints, use `/plan` for sequential execution with review between phases.
 </details>
 
 <details>
@@ -376,9 +385,9 @@ This configuration is designed to maximize session length within Pro Plan constr
 <summary><strong>Q: Can it be used on the Max Plan?</strong></summary>
 
 A: Yes, but these optimizations may not be necessary. The Max Plan provides much higher usage limits, making Pro Plan constraints less relevant. For Max Plan users:
-- Parallel agents can be safely activated without rapid quota depletion.
-- Git Worktrees for simultaneous sessions are practical.
-- A sequential-only strategy is less necessary.
+- Opus can be used as the default model without quota concerns.
+- Git Worktrees and parallel sessions are practical.
+- Output budgets and batch execution are still good practices, but not critical.
 
 This configuration is specifically designed for the Pro Plan's 5-hour rolling reset and message-based quota system.
 </details>

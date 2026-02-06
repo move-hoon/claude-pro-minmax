@@ -14,8 +14,8 @@ Pro Plan 제약에 최적화된 Claude Code 설정입니다.
 
 > [!TIP]
 > **🚀 3초 요약: 왜 이걸 써야 하나요?**
-> 1.  **Quota 방어:** 무지성 병렬 실행을 막고 **순차 실행**을 강제하여 토큰을 아낍니다.
-> 2.  **비용 최적화:** 비싼 Opus 대신 **Haiku(구현) + Sonnet(설계)** 조합을 사용합니다.
+> 1.  **모델 비용 제어:** 비싼 Opus 대신 **Haiku(1/5 비용)** 로 구현, **Sonnet**으로 설계합니다.
+> 2.  **출력 비용 인식:** 에이전트 응답 예산 + CLI 필터링으로 **Input 대비 5배 비싼** Output 토큰을 절감합니다.
 > 3.  **무비용 자동화:** API를 쓰지 않는 **11개의 로컬 Hook**으로 안전장치를 제공합니다.
 
 ---
@@ -73,7 +73,7 @@ Claude Pro Plan에는 Claude Code 사용 방식을 근본적으로 바꾸는 제
 - **메시지 기반 Quota (길이 민감)**: 대화가 길어질수록(Context가 쌓일수록) 메시지 하나당 차감되는 할당량이 기하급수적으로 늘어납니다. ([Claude Help Center](https://support.anthropic.com/en/articles/8325606-what-is-claude-pro))
 - **주간 제한**: 과다 사용자에게 추가 주간 cap이 적용됩니다
 
-원본 [everything-claude-code](https://github.com/affaan-m/everything-claude-code)는 사실상 무제한에 가까운 **Max Plan** 환경에 최적화된 강력한 도구입니다. 하지만 병렬 에이전트나 다중 인스턴스 같은 '고출력' 패턴을 **Pro Plan**에서 그대로 답습하면, 급격한 컨텍스트 누적으로 인해 Quota가 순식간에 고갈되고 맙니다.
+원본 [everything-claude-code](https://github.com/affaan-m/everything-claude-code)는 사실상 무제한에 가까운 **Max Plan** 환경에 최적화된 강력한 도구입니다. 하지만 수정 없이 **Pro Plan**에서 사용하면 quota를 낭비하게 됩니다 — 단순 작업에 비싼 모델(Opus) 사용, 장황한 에이전트 출력, 불필요한 메시지 왕복이 5시간 예산을 빠르게 소진합니다.
 
 이 프로젝트는 강력한 기능은 유지하면서 Pro Plan 제약에 맞게 아키텍처를 재설계했습니다.
 
@@ -87,32 +87,33 @@ Claude Pro Plan에는 Claude Code 사용 방식을 근본적으로 바꾸는 제
 이 설정은 작업당 Quota 소비를 줄여 생산적인 작업 시간을 연장하도록 설계되었습니다. 목표는 "제한 우회"가 아니라, **리소스 효율성 최적화**를 통해 할당량을 소진하지 않고 더 오래 작업하는 것입니다.
 
 ### 2. 접근 방식 (Approach)
-Anthropic은 정확한 알고리즘을 공개하지 않았지만, Quota 소비는 다음 3가지에 영향을 받습니다. 이 프로젝트는 이를 모두 최적화합니다.
+Anthropic이 정확한 알고리즘을 공개하지 않았지만, Quota 소비는 다음 요인에 영향을 받습니다. 이 프로젝트는 하나의 원칙으로 모두 최적화합니다: **메시지당 최대 가치 (Maximum Value Per Message).**
 
-* **컨텍스트 크기 (입력 토큰):** 순차 실행으로 중복 제거
-* **응답 길이 (출력 토큰):** CLI 필터링으로 감소
-* **모델 유형 (컴퓨팅 비용):** 전략적 모델 선택
+* **모델 비용 (핵심 — 5배):** Haiku는 Opus의 1/5 비용 (API 가격 기준). 작업 가능한 최저 비용 모델 사용.
+* **출력 토큰 (고영향 — 5배):** Output은 Input의 5배 비용 (API 가격 기준). 모든 에이전트에 응답 예산 적용.
+* **메시지 수 (직접):** 메시지 수 = quota 소비. `/do` 한 번에 plan+build+verify를 배치 처리.
+* **CLI 필터링:** `jq`, `mgrep`로 도구 출력 토큰 감소, input과 output 모두 축소.
 
-### 3. 실행 전략: 원자적 워크플로우 & 순차적 실행
+### 3. 실행 전략: 가치 우선 워크플로우
 
-1.  **원자적 작업 실행 (Atomic Execution)**
-    * 각 작업이 하나의 완전한 사이클을 완료합니다. (계획 → 빌드 → 리뷰 → 저장)
-    * 페이즈당 에이전트 1회 실행 (반복 재호출 없음)
-    * 사이클 완료 후 다음 작업으로 깔끔하게 이동합니다.
+1.  **기본: 배치 실행 (`/do`)**
+    * 단순 작업 (1-3 파일): `/do`가 plan+build+verify를 한 번에 처리합니다.
+    * 플래너 오버헤드 없음. 단계 사이 사람 확인 없음.
+    * **결과: 2 메시지** (사용자 요청 + Claude 응답) vs 순차 파이프라인의 6+ 메시지.
 
-2.  **작업당 비용 최소화 (Cost Minimization)**
-    * `@builder` (Haiku): 구현 담당 (API 가격상 가장 적은 리소스 소비)
-    * `@planner` (Sonnet): 아키텍처 설계 (균형 잡힌 능력과 비용)
-    * **Opus**: 필요할 때만 에스컬레이션 (API 가격상 가장 비쌈)
+2.  **선택: 순차 파이프라인 (`/plan`)**
+    * 중-복잡 작업 (4+ 파일): `/plan` → `@builder` → `@reviewer`.
+    * 단계 사이에 사람 확인이 필요할 때 사용합니다.
+    * 설계 단계 자체를 검증한 후 구현해야 할 때 사용합니다.
 
-3.  **컨텍스트 크기 감소 (Context Reduction)**
-    * **순차 실행:** 한 번에 하나의 에이전트만 실행하여 컨텍스트 중복 누적을 막습니다. (3~4개 병렬 실행 금지)
-    * **중단 가능:** 작업 사이에 언제든 중단할 수 있습니다.
-    * **CLI 필터링:** 도구 출력 토큰을 대폭 감소시킵니다.
+3.  **작업당 비용 최소화**
+    * `@builder` (Haiku): 구현 담당 (Opus의 1/5 비용).
+    * `@planner` (Sonnet): 아키텍처 설계 (균형 잡힌 능력과 비용).
+    * **Opus**: 에스컬레이션 전용 — 명시적 `/do-opus`로 비용 가시화.
 
 4.  **안전한 에스컬레이션 경로 (Safety Ladder)**
-    * Haiku 실패 (2회 재시도 후) → Sonnet으로 격상 (`/do-sonnet`)
-    * Sonnet 실패 → Opus로 격상 (`/do-opus`)
+    * Haiku 실패 (2회 재시도 후) → Sonnet으로 격상 (`/do-sonnet`).
+    * Sonnet 실패 → Opus로 격상 (`/do-opus`).
     * 명시적 모델 선택으로 비용을 인지하게 합니다.
 
 ---
@@ -120,35 +121,43 @@ Anthropic은 정확한 알고리즘을 공개하지 않았지만, Quota 소비�
 ## 📊 결과 및 비교
 
 **주요 기대 효과:**
-✅ 병렬 실행 대비 훨씬 긴 세션
-✅ 예측 가능한 사용 패턴 (작업 계획 용이)
-✅ 전략적 에스컬레이션을 통한 높은 성공률
+✅ 모델 비용 최적화로 훨씬 긴 세션 (Haiku = Opus의 1/5).
+✅ 배치 실행(`/do`)으로 작업당 더 적은 메시지.
+✅ 엄격한 에이전트 응답 예산으로 출력 토큰 감소.
 
 > [!NOTE]
-> **참고:** Anthropic의 정확한 Quota 알고리즘은 비공개입니다. 본 설정은 API 가격 및 토큰 패턴을 기반으로 한 최적화이며, 실제 결과는 작업 복잡도에 따라 달라질 수 있습니다.
+> **참고:** Anthropic의 정확한 Quota 알고리즘은 비공개입니다. 본 설정은 API 가격 및 검증된 비용 요인을 기반으로 최적화하며, 실제 결과는 작업 복잡도에 따라 달라질 수 있습니다.
 
-### Quota 소진 시뮬레이션
+### 비용 비교: 배치 vs 순차
+
+> 진짜 절약은 **더 적고, 더 싼 메시지를 보내는 것**에서 오지, 실행 순서에서 오지 않습니다.
 
 ```mermaid
-gantt
-    title ⚡️ Quota 소비: 병렬(폭주) vs 순차(효율)
-    dateFormat HH:mm
-    axisFormat %H:%M
-    todayMarker off
+flowchart LR
+    subgraph "🟢 배치 (/do) — 2 메시지"
+        U1[사용자: /do 작업] --> C1[Claude: plan+build+verify]
+        C1 -.- R1[합계: 2 msg]
+    end
 
-    section 🔴 기존 (병렬 실행)
-    Agent 1 (Sonnet)      :crit, a1, 00:00, 45m
-    Agent 2 (Haiku)       :crit, a2, 00:00, 45m
-    Agent 3 (Reviewer)    :crit, a3, 00:00, 45m
-    💥 Quota 고갈 (45분) :milestone, 00:45, 0m
+    subgraph "🔴 순차 파이프라인 — 6+ 메시지"
+        U2[사용자: /plan] --> P[Planner 출력]
+        P --> U3[사용자: 확인]
+        U3 --> B[Builder 출력]
+        B --> U4[사용자: /review]
+        U4 --> RV[Reviewer 출력]
+        RV -.- R2[합계: 6+ msg]
+    end
 
-    section 🟢 CPMM (순차 실행)
-    Task 1 (Plan+Build)   :active, s1, 00:00, 1h
-    Task 2 (Refactor)     :s2, after s1, 1h
-    Task 3 (Test+Fix)     :s3, after s2, 1h
-    Task 4 (New Feature)  :s4, after s3, 1h
-    ✅ 5시간 생존 완료      :milestone, 05:00, 0m
+    style R1 fill:#c8e6c9,stroke:#2e7d32
+    style R2 fill:#ffcdd2,stroke:#b71c1c
 ```
+
+| 요소 | 측정 효과 | 메커니즘 |
+|------|----------|----------|
+| **모델 선택** | **5배 비용 절감** | Haiku ($1/MTok) vs Opus ($5/MTok) — API 가격 |
+| **출력 예산** | **~60% 출력 감소** | 에이전트 응답 제한 (builder: 5줄, reviewer: 1줄 PASS) |
+| **배치 실행** | **~3배 메시지 감소** | `/do` = 2 msg vs 순차 파이프라인 = 6+ msg |
+| **CLI 필터링** | **~50% 도구 출력 감소** | `jq`, `mgrep`로 도구 결과의 input 토큰 감소 |
 
 ---
 
@@ -213,7 +222,7 @@ flowchart LR
 | **💾 세션/컨텍스트** | | |
 | `/session-save` | 세션 요약 및 저장 | 작업 중단 시 (시크릿 자동 제거) |
 | `/session-load` | 세션 불러오기 | 이전 작업 재개 |
-| `/compact-phase` | 단계별 컨텍스트 압축 | 세션 중간에 토큰 정리 필요 시 |
+| `/compact-phase` | 단계별 컨텍스트 압축 | 세션 중간에 컨텍스트 정리 필요 시 |
 | `/load-context` | 컨텍스트 템플릿 로드 | 프론트/백엔드 초기 설정 시 |
 | **🛠️ 유틸리티** | | |
 | `/learn` | 패턴 학습 및 저장 | 자주 반복되는 오류나 선호 스타일 등록 |
@@ -352,12 +361,12 @@ claude-pro-minmax
 <details>
 <summary><strong>Q: 이 설정은 어떻게 Pro Plan quota를 최적화하나요?</strong></summary>
 
-A: Anthropic의 정확한 quota 알고리즘은 공개되지 않았습니다. 하지만 다음을 기반으로 최적화합니다:
-- **API 가격** (컴퓨팅 비용 반영): Haiku는 Sonnet/Opus보다 훨씬 저렴
-- **토큰 사용 패턴**: CLI 필터링과 hooks로 입출력 토큰 감소
-- **순차 실행**: 여러 에이전트의 동시 quota 소진 방지
+A: Anthropic의 정확한 quota 알고리즘은 공개되지 않았습니다. 세 가지 축으로 최적화합니다:
+- **모델 비용** (검증됨): Haiku는 API 가격 기준 Opus의 1/5.
+- **출력 감소** (검증됨): Output 토큰은 Input의 5배 비용. 에이전트 응답 예산 + CLI 필터링으로 출력 감소.
+- **메시지 효율**: `/do`가 plan+build+verify를 한 번에 처리 (순차 파이프라인의 6+ 메시지 vs 2 메시지).
 
-연비 효율과 비슷합니다: 정확한 주행 거리를 보장할 수는 없지만, 대부분의 작업에 작은 엔진(Haiku)을 사용하고 고속 주행(병렬 실행)을 피하면 주행 거리를 늘릴 수 있습니다.
+사람 확인이 필요한 작업에는 `/plan`으로 단계별 순차 실행을 사용하세요.
 </details>
 
 <details>
@@ -375,9 +384,9 @@ A: **보장되지 않습니다**. 세션 길이는 다음에 따라 다릅니다
 <summary><strong>Q: Max Plan에서도 사용할 수 있나요?</strong></summary>
 
 A: 네, 하지만 이러한 최적화가 필요하지 않을 수 있습니다. Max Plan은 훨씬 높은 사용 제한을 제공하여 Pro Plan 제약이 덜 관련됩니다. Max Plan 사용자라면:
-- Quota 빠른 소진 없이 병렬 에이전트를 안전하게 활성화 가능
-- 동시 세션을 위한 Git Worktrees가 실용적
-- 순차 전용 전략이 덜 필요
+- Opus를 기본 모델로 quota 걱정 없이 사용 가능
+- Git Worktrees와 병렬 세션이 실용적
+- 출력 예산과 배치 실행은 여전히 좋은 습관이지만 필수는 아님
 
 이 설정은 Pro Plan의 5시간 rolling reset과 메시지 기반 quota 시스템을 위해 특별히 설계되었습니다.
 </details>

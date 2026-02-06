@@ -11,9 +11,10 @@ Pro Plan constraints. Every message = quota. Optimize for Pass@1.
 - Assume → Execute → User corrects
 - No preamble: Skip "I'll help you..." → Execute immediately
 
-### Token Efficiency
-- `mgrep` > `grep` (faster, less output)
+### Value Per Message
+- Output costs 5x Input — keep agent responses short
 - `CLI --json | jq` > MCP tools (filtered output reduces tokens)
+- `mgrep` > `grep` (faster, less output)
 - Load context: `/load-context [type]` (Read tool)
 - **Learned Patterns**: Always index `~/.claude/skills/learned/*.md` at session start to reuse previous insights and prevent rework.
 
@@ -49,6 +50,11 @@ Pro Plan constraints. Every message = quota. Optimize for Pass@1.
 | Quality Review | @reviewer | Haiku | None → Escalate |
 
 @dplanner tools: `sequential-thinking`, `perplexity`, `context7`
+
+## DEFAULT WORKFLOW
+- Simple (1-3 files): `/do` — batch plan+build+verify in one shot
+- Medium (4-5 files): `/plan` — @planner → @builder sequential
+- Complex (5+ files, research): `/dplan` — @dplanner → @planner → @builder
 
 ## SECRETS
 Never persist to session files: `sk-*`, `ghp_*`, `AKIA*`, JWT, passwords
