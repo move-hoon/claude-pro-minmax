@@ -3,7 +3,7 @@
 > **[한국어 버전](README.ko.md)**
 
 ## Purpose
-This directory contains reusable skill definitions designed for **Maximum Token Efficiency** using the Facade Pattern. It prevents "Token Bloat" by separating high-level interfaces from verbose technical details.
+This directory contains reusable skill definitions designed for **Maximum Value Per Message** using the Facade Pattern. It prevents excessive context loading by separating high-level interfaces from verbose technical details.
 
 ## Structure (Facade Pattern)
 

@@ -66,7 +66,7 @@ flowchart TB
 | Situation | Recommended | Why |
 |-----------|-------------|-----|
 | Short break (same day) | `claude -c` | Fast, exact conversation resume |
-| Long break (next day) | `/session-load` | Load only key context, save tokens |
+| Long break (next day) | `/session-load` | Load only key context, reduce cost |
 | Share context with team | `/session-save` | Human-readable `.md` for sharing |
 | After working with secrets | `/session-save` | Auto-scrubbing for safety |
 | Need exact conversation | `claude --resume` | Full transcript replay |

@@ -37,7 +37,7 @@ Context files are static project information (API endpoints, DB schema, env vars
 ## Why Lazy Loading?
 
 1. **Prompt Cache Efficiency:** CLAUDE.md stays immutable, maximizing cache hits
-2. **Token Economy:** Only load what you need (Pro Plan: every message = quota)
+2. **Cost Economy:** Only load what you need (Pro Plan: every message = quota)
 3. **Focused Context:** Avoid loading frontend schema during backend work
 
 ## Instruction Hierarchy

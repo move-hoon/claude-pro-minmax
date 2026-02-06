@@ -23,7 +23,7 @@ $ARGUMENTS
 | frontend | `.claude/contexts/frontend-context.md` |
 | session | Most recent file from `.claude/sessions/` |
 
-## Token Economy
+## Cost Economy
 Warning when more than 2 contexts loaded in a session:
 ```
 ⚠️ WARNING: 3 contexts loaded (backend, frontend, session)

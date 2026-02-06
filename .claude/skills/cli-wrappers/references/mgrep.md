@@ -1,7 +1,7 @@
 # mgrep Reference
 
 ## Why mgrep?
-50% fewer tokens than grep/ripgrep
+50% less output than grep/ripgrep
 
 ## Usage
 ```bash
@@ -12,7 +12,7 @@ mgrep "TODO|FIXME" --include "*.ts"
 ```
 
 ## vs grep
-| Tool | Tokens |
+| Tool | Output |
 |------|--------|
 | grep | ~2000 |
 | mgrep | ~1000 |

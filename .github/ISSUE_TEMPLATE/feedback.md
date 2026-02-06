@@ -12,7 +12,7 @@ assignees: ''
 - **Claude Code version:**
 - **Plan:** (Pro / Max5 / Max20)
 
-## Token Usage Comparison
+## Quota Usage Comparison
 
 *If you compared with vanilla Claude Code, fill in below:*
 
@@ -32,4 +32,4 @@ What did you try to accomplish?
 
 ## Screenshots (Optional)
 
-*Token counter screenshots before/after are especially helpful.*
+*Quota usage screenshots before/after are especially helpful.*

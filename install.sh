@@ -5,13 +5,13 @@ echo "🚀 Installing Claude Pro MinMax (CPMM)"
 
 # Check for dependencies
 if ! command -v jq &> /dev/null; then
-    echo "⚠️ Warning: jq is not installed. Some features (JSON output, token savings) may not work."
+    echo "⚠️ Warning: jq is not installed. Some features (JSON output, cost optimization) may not work."
     echo "  Install with: brew install jq"
 fi
 
-# Check for mgrep (Critical for token savings)
+# Check for mgrep (Critical for output reduction)
 if ! command -v mgrep &> /dev/null; then
-    echo "⚠️ Warning: mgrep is not installed. This is critical for 50% token savings."
+    echo "⚠️ Warning: mgrep is not installed. This is critical for 50% output reduction."
     echo "  Install with: npm install -g @mixedbread/mgrep && mgrep install-claude-code"
 fi
 

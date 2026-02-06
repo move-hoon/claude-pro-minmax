@@ -1,6 +1,6 @@
 ---
 name: cli-wrappers
-description: Use CLI tools instead of MCP to save tokens. Provides JSON output patterns for gh, mgrep, psql, etc.
+description: Use CLI tools instead of MCP to reduce cost. Provides JSON output patterns for gh, mgrep, psql, etc.
 ---
 
 # CLI Wrappers Skill

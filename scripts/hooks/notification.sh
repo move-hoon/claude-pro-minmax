@@ -40,7 +40,7 @@ case "$TYPE" in
     send_notification "Claude Code" "⏳ Waiting for input"
     ;;
   *)
-    # Ignore other notifications (to save tokens/resources)
+    # Ignore other notifications (to save resources)
     ;;
 esac
 

@@ -40,7 +40,7 @@ This command provides the appropriate `/compact` instruction for your current ph
 | review | Final state, issue list | Iteration history |
 | deep-planning | Validated logic, final plan | Intermediate thoughts, raw search results |
 
-## Token Savings
+## Cost Savings
 - planning → implementation: ~40% context reduction
 - implementation → review: ~30% context reduction
 - review → complete: ~50% context reduction

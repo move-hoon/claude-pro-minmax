@@ -42,7 +42,7 @@ tmux new-session -d -s claude-watch-custom "[cmd]"
 - `tmux ls`: List sessions
 - `tmux kill-session -t [name]`: Kill session
 
-## Token Savings
+## Cost Savings
 Before: 5 check cycles = 15 messages
 With /watch: 5 check cycles = 1 message
 

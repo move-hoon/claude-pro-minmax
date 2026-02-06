@@ -20,8 +20,8 @@ bash scripts/analyze-failures.sh "$ARGUMENTS"
 ```
 
 ## How It Works
-1. **Collection**: Failures are automatically logged by `scripts/hooks/tool-failure-log.sh` (Zero-token cost).
-2. **Analysis**: This command uses `awk` to aggregate and count errors locally (Zero-token cost for generation).
+1. **Collection**: Failures are automatically logged by `scripts/hooks/tool-failure-log.sh` (Zero-cost).
+2. **Analysis**: This command uses `awk` to aggregate and count errors locally (Zero-cost for generation).
 3. **Insight**: The output summary is added to context, allowing Claude to offer specific advice if needed.
 
 ## Output Example
