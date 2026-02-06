@@ -9,7 +9,7 @@ Contains slash command definitions for common workflows.
 
 | Command | Purpose | Key Feature |
 |---------|---------|-------------|
-| `do.md` | Direct execution | No planner, /do-sonnet for model override |
+| `do.md` | Batch execution | Plan+build+verify in ONE response. /do-sonnet for model override |
 | `do-sonnet.md` | Execute with Sonnet | context: fork, model: sonnet |
 | `do-opus.md` | Execute with Opus | context: fork, model: opus |
 | `plan.md` | Complex tasks | @planner → @builder chain |
@@ -18,7 +18,7 @@ Contains slash command definitions for common workflows.
 | `learn.md` | Capture patterns | Auto-extract or explicit |
 | `session-save.md` | Save state | Secret scrubbing |
 | `session-load.md` | Resume work | Context restoration |
-| `load-context.md` | Load context | Read tool, token economy |
+| `load-context.md` | Load context | Read tool, cost economy |
 | `compact-phase.md` | Strategic compact | Phase-aware pruning |
 | `watch.md` | tmux monitoring | Zero message cost |
 | `llms-txt.md` | LLM Documentation | Fetch /llms.txt from URLs |
@@ -29,7 +29,7 @@ Contains slash command definitions for common workflows.
 ### Execution Commands
 | Command | When to Use | Resource Usage |
 |---------|-------------|----------------|
-| `/do` | Well-defined, simple tasks (< 3 files) | Minimal (Haiku default) |
+| `/do` | Simple-to-medium tasks (1-3 files). Batch plan+build+verify | Minimal (Haiku default) |
 | `/do-sonnet` | Complex logic requiring deeper reasoning | Moderate (Sonnet) |
 | `/do-opus` | Critical decisions, Sonnet failed | Higher (Opus—API pricing reflects cost) |
 | `/plan` | Multi-file tasks, architecture decisions | Moderate (Sonnet → Haiku chain) |
@@ -138,7 +138,7 @@ Contains slash command definitions for common workflows.
 |--------|-----|------------|----------|-------|--------|
 | **Model** | Haiku (default) | Sonnet | Opus | Sonnet → Haiku | Sonnet + MCP |
 | **Cost** | 1x | 5x | 25x | 6x | 10-15x |
-| **Planning** | None | None | None | Architecture design | Deep research |
+| **Planning** | Internal (batch) | Internal (batch) | Internal (batch) | Architecture design | Deep research |
 | **Use Case** | Simple tasks | Complex logic | Critical decisions | Multi-file features | Unknown unknowns |
 | **Files Affected** | 1-2 | 1-3 | Any | 5+ | Any |
 | **Questions** | No | No | No | ≤3 (with defaults) | Unlimited |
@@ -277,7 +277,7 @@ Task Complexity
 /plan Create user module with model, controller, and tests
 ```
 
-**Use zero-token tools:**
+**Use zero-cost tools:**
 - `/session-save`, `/session-load` (script-based)
 - `/watch` (tmux-based)
 - `/compact-phase` (guidance only)

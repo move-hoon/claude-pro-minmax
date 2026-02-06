@@ -18,9 +18,17 @@ $ARGUMENTS
 
 ## Protocol
 1. Check CRITICAL_ACTIONS → confirm if found
-2. Execute immediately (no planner)
-3. Verify with `scripts/verify.sh` (runtime-adaptive)
-4. STOP + escalate after 2 retries
+2. **Internal Planning** (no agent call): Identify files to modify, changes needed, verify approach
+3. **Execute all changes** in a single pass
+4. Verify with `scripts/verify.sh` (runtime-adaptive)
+5. STOP + escalate after 2 retries
+
+## Batch Execution
+This command handles plan+build+verify in ONE response.
+- Do NOT spawn @planner — plan internally
+- Do NOT ask for confirmation between steps
+- Do NOT split work across multiple messages
+- Result: user sends 1 message, receives 1 complete response
 
 ## Verification (Runtime-Adaptive)
 | Type | Verification |
