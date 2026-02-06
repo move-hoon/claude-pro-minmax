@@ -248,13 +248,12 @@ This project provides detailed documentation for each component. Refer to the li
 <summary><strong>📁 View File Tree (Click to Expand)</strong></summary>
 
 ```text
-claude-pro-devkit
+claude-pro-minmax
 ├── .claude.json                # Global MCP Settings (User Scope)
 ├── install.sh                  # One-click installation script
+├── LICENSE                     # MIT License
 ├── README.md                   # English Documentation
 ├── README.ko.md                # Korean Documentation
-├── USER-MANUAL.md              # Detailed User Manual (English)
-├── USER-MANUAL.ko.md           # Detailed User Manual (Korean)
 ├── .claude/
 │   ├── CLAUDE.md               # Core Instructions (Loaded in all sessions)
 │   ├── settings.json           # Project Settings (Permissions, hooks, env vars)

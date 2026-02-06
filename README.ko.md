@@ -247,15 +247,12 @@ flowchart LR
 <summary><strong>📁 파일 트리 보기 (Click to Expand)</strong></summary>
 
 ```text
-claude-pro-devkit
+claude-pro-minmax
 ├── .claude.json                # 글로벌 MCP 설정 (User Scope)
 ├── install.sh                  # 원클릭 설치 스크립트
 ├── LICENSE                     # MIT 라이선스
-├── SECURITY_AUDIT_REPORT.md    # 보안 감사 결과 보고서
 ├── README.md                   # 영문 문서
 ├── README.ko.md                # 국문 문서
-├── USER-MANUAL.md              # 상세 사용자 매뉴얼 (영문)
-├── USER-MANUAL.ko.md           # 상세 사용자 매뉴얼 (국문)
 ├── .claude/
 │   ├── CLAUDE.md               # 핵심 지침 (모든 세션에 로드됨)
 │   ├── settings.json           # 프로젝트 설정 (권한, 훅, 환경변수)
