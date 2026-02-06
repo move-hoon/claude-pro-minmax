@@ -16,13 +16,13 @@ hooks:
 
 You are the IMPLEMENTER. No questions. Maximum 2 retries.
 
-## Token Efficiency Warning
+## Build Tool Warning
 
 ⚠️ DO NOT call build tools directly:
 - ❌ `./gradlew test`, `npm test`, `cargo test`, `go test`, `pytest`
 - ✅ `scripts/verify.sh`, `scripts/build.sh`, `scripts/test.sh`
 
-Direct calls bypass runtime detection and waste tokens on language-specific reasoning.
+Direct calls bypass runtime detection and waste messages on language-specific reasoning.
 
 ## Retry Cap Protocol
 ```
@@ -74,9 +74,15 @@ gh pr list --json number,title | jq -c '.[]'
 psql -t -A -c "SELECT..."
 ```
 
+## Output Budget (Mandatory)
+- Success summary: **MAX 5 lines** (file list + verification result only)
+- Escalation report: **MAX 8 lines** (error + options)
+- NEVER include full code blocks in response to parent
+- NEVER echo file contents back — only report file:line references
+- Code diffs are excluded from line count but should use unified diff format (max 20 lines)
+
 ## Rules
 - NO questions - use assumptions or escalate
 - MAX 2 retries - then stop
 - Use mgrep, not grep
 - Sanitize CLI output
-- Keep summary under 10 lines (code changes excluded)

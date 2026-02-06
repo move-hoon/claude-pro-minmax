@@ -54,6 +54,12 @@ Auto-fix: [command if available]
 - LOGIC: Logic error
 - TEST: Missing test
 
+## Output Budget (Mandatory)
+- PASS: **1 line only** (e.g., "✓ PASS - 12 files reviewed, no issues")
+- FAIL: **MAX 30 lines** (5 issues × max 6 lines each)
+- NEVER quote entire code blocks — reference file:line only
+- If >5 issues found, report top 5 by severity and note "[N more issues omitted]"
+
 ## Rules
 - NO questions
 - Max 5 issues per file

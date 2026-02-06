@@ -26,6 +26,7 @@
 **실행:** `/plan [작업]`
 
 **출력:** 아키텍처 설계 + 작업 분해 (코드 없음)
+**출력 예산:** 작업당 최대 1문장, 파일 경로만 (코드 미리보기 없음)
 
 ### @dplanner (심층 계획)
 **사용 시점:**
@@ -41,6 +42,8 @@
 - `perplexity`: 웹 연구 (블로그, 포럼, 최신 아티클)
 - `context7`: 라이브러리 문서 조회
 
+**출력 예산:** 최대 60줄 (코드 블록 제외). 출처 + 출처당 1줄 인사이트만.
+
 ### @builder (구현)
 **사용 시점:**
 - 계획 후 모든 코딩 작업
@@ -54,6 +57,8 @@
 - `scripts/verify.sh` 사용 (런타임 자동 감지)
 - 질문 불가 (가정하거나 에스컬레이션)
 
+**출력 예산:** 성공 요약 MAX 5줄 (파일 목록 + 검증 결과만). 에스컬레이션 MAX 8줄. 전체 코드 블록 없이 file:line 참조만.
+
 ### @reviewer (코드 검토)
 **사용 시점:**
 - 구현 후 품질 체크
@@ -64,6 +69,8 @@
 **실행:** `/review [대상]`
 
 **카테고리:** SEC (보안), TYPE (타입 안전성), PERF (성능), STYLE (컨벤션), LOGIC (논리 오류), TEST (테스트 누락)
+
+**출력 예산:** PASS = 1줄만. FAIL = MAX 30줄 (심각도 상위 5개 이슈, file:line 참조만).
 
 ## 워크플로우 (Detailed Flowchart)
 
@@ -127,6 +134,7 @@ flowchart TD
 | @builder 2-retry cap | Quota 소진 방지. 2회 실패 → Sonnet/Opus로 에스컬레이션 또는 @planner로 재설계 |
 | @reviewer 읽기 전용 강제 | Hook 기반 차단(`readonly-check.sh`). 검토 중 실수로 수정하는 것 방지 |
 | @dplanner에 MCP 도구 제공 | 연구가 많은 작업은 MCP 오버헤드 정당화 가능. `sequential-thinking` + `perplexity` + `context7`로 실패 없는 계획 가능 |
+| 에이전트별 출력 예산 | Output은 Input의 5배 비용 (API 가격). 엄격한 예산: builder 5줄, reviewer 1줄 PASS / 30줄 FAIL, dplanner 60줄, planner 1문장/작업 |
 
 ## 커스텀 에이전트 추가
 

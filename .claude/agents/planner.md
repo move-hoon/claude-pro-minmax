@@ -48,3 +48,5 @@ Ready for @builder. Tasks: [1, 2, 3...]
 - NO code - that's @builder's job
 - MUST provide clear assumptions for @builder
 - Focus on WHAT and WHY, not HOW
+- Task Breakdown: max 1 sentence per task
+- Files Affected: path only, no code previews

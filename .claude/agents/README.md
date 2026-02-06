@@ -26,6 +26,7 @@ Contains sub-agent definitions for role-based task delegation with model optimiz
 **Triggers:** `/plan [task]`
 
 **Output:** Architecture design + task breakdown (no code)
+**Output Budget:** Max 1 sentence per task, file paths only (no code previews)
 
 ### @dplanner (Deep Planning)
 **Use for:**
@@ -41,6 +42,8 @@ Contains sub-agent definitions for role-based task delegation with model optimiz
 - `perplexity`: Web research (blogs, forums, latest articles)
 - `context7`: Library documentation lookup
 
+**Output Budget:** Max 60 lines (code blocks excluded). Cite source + 1-line insight per source.
+
 ### @builder (Implementation)
 **Use for:**
 - All coding tasks after planning
@@ -54,6 +57,8 @@ Contains sub-agent definitions for role-based task delegation with model optimiz
 - Uses `scripts/verify.sh` (runtime-adaptive)
 - No questions allowed (assumes or escalates)
 
+**Output Budget:** Success summary MAX 5 lines (file list + verification only). Escalation MAX 8 lines. No full code blocks — file:line references only.
+
 ### @reviewer (Code Review)
 **Use for:**
 - Post-implementation quality check
@@ -64,6 +69,8 @@ Contains sub-agent definitions for role-based task delegation with model optimiz
 **Triggers:** `/review [target]`
 
 **Categories:** SEC (Security), TYPE (Type safety), PERF (Performance), STYLE (Convention), LOGIC (Logic error), TEST (Missing test)
+
+**Output Budget:** PASS = 1 line only. FAIL = MAX 30 lines (top 5 issues by severity, file:line references only).
 
 ## Workflow (Detailed Flowchart)
 
@@ -127,6 +134,7 @@ flowchart TD
 | @builder 2-retry cap | Prevents quota drain. Failed twice → Escalate to Sonnet/Opus or @planner for re-design |
 | @reviewer read-only enforcement | Hook-based blocking (`readonly-check.sh`). Prevents accidental modifications during review |
 | @dplanner with MCP tools | Research-heavy tasks justify MCP overhead. `sequential-thinking` + `perplexity` + `context7` enable fail-proof planning |
+| Output Budget per agent | Output costs 5x Input (API pricing). Strict budgets: builder 5 lines, reviewer 1 line PASS / 30 lines FAIL, dplanner 60 lines, planner 1 sentence/task |
 
 ## Adding Custom Agents
 
