@@ -15,8 +15,17 @@
       "Bash(else echo \"Not a git repository\")",
       "Bash(fi)",
       "Bash(ln:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(xargs:*)",
+      "Bash(node:*)",
+      "mcp__perplexity__perplexity_research",
+      "Bash(git commit:*)"
     ]
   },
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "sequential-thinking",
+    "context7",
+    "perplexity"
+  ]
 }
