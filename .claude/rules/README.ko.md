@@ -12,7 +12,8 @@ Claude가 항상 따르는 규칙들을 포함합니다. 이 규칙들은 모든
 | `critical-actions.md` | 위험한 명령어에 대한 HITL(Human-in-the-Loop) 확인 | 최상 |
 | `security.md` | 보안 모범 사례 | 상 |
 | `code-style.md` | 코드 컨벤션 | 중 |
-| `language.md` | 응답 언어 강제 | 하 |
+
+> **언어 설정:** `install.sh` 실행 시 출력 언어를 선택하거나, `~/.claude/rules/language.md`를 수동으로 생성하세요. 영어 사용자는 파일이 필요 없습니다 (기본값).
 
 ## 중요 작업 (Critical Actions)
 

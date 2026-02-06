@@ -36,8 +36,12 @@ brew install jq   # macOS (Linux: sudo apt-get install jq)
 ```
 
 ### 3. 설치 후 설정 (선택 사항)
-**설치 스크립트 실행 중 Perplexity API 키 입력을 요청합니다.**
-설치 시 건너뛰었다면 나중에 수동으로 설정할 수 있습니다:
+**설치 스크립트 실행 중 Perplexity API 키와 출력 언어를 선택합니다.**
+설치 시 언어를 건너뛰었다면 수동으로 설정할 수 있습니다:
+- **비영어:** `~/.claude/rules/language.md`를 생성하여 원하는 언어 지정
+- **영어 (기본값):** 파일 불필요. `~/.claude/rules/language.md`가 있으면 삭제
+
+Perplexity를 설치 시 건너뛰었다면 나중에 수동으로 설정할 수 있습니다:
 1. `~/.claude.json` 파일을 엽니다.
 2. `mcpServers` 객체 안에 다음 내용을 추가하세요:
    ```json
@@ -280,8 +284,7 @@ claude-pro-minmax
 │   ├── rules/                  # 행동 규칙
 │   │   ├── critical-actions.md # 위험 명령어 차단 (rm -rf, git push -f, etc.)
 │   │   ├── code-style.md       # 코딩 컨벤션 및 표준
-│   │   ├── security.md         # 보안 모범 사례
-│   │   └── language.md         # 언어 제약 (예: 한국어 사용)
+│   │   └── security.md         # 보안 모범 사례
 │   ├── skills/                 # 도구 능력
 │   │   ├── cli-wrappers/       # 경량 CLI 래퍼 (MCP 오버헤드 대체)
 │   │   └── learned/            # /learn 명령어로 축적된 패턴

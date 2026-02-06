@@ -12,7 +12,8 @@ Contains always-loaded rules that Claude follows. These are loaded automatically
 | `critical-actions.md` | HITL confirmation for dangerous commands | HIGHEST |
 | `security.md` | Security best practices | HIGH |
 | `code-style.md` | Code conventions | MEDIUM |
-| `language.md` | Force output language | LOW |
+
+> **Language setting:** Run `install.sh` to select your output language, or manually create `~/.claude/rules/language.md`. English users need no file (default).
 
 ## Critical Actions
 
