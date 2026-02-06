@@ -39,7 +39,11 @@ if [ -f "$SCRIPT_DIR/.claude/settings.local.json" ]; then
 fi
 cp "$SCRIPT_DIR/.claude/agents/"*.md ~/.claude/agents/
 cp "$SCRIPT_DIR/.claude/commands/"*.md ~/.claude/commands/
-cp "$SCRIPT_DIR/.claude/rules/"*.md ~/.claude/rules/
+for rule in "$SCRIPT_DIR/.claude/rules/"*.md; do
+  filename=$(basename "$rule")
+  [ "$filename" = "language.md" ] && continue
+  cp "$rule" ~/.claude/rules/
+done
 cp -R "$SCRIPT_DIR/.claude/skills/"* ~/.claude/skills/
 cp "$SCRIPT_DIR/.claude/contexts/"*.md ~/.claude/contexts/
 cp "$SCRIPT_DIR/.claude/sessions/"*.md ~/.claude/sessions/
@@ -92,6 +96,47 @@ if [ -f "$SCRIPT_DIR/.claude.json" ]; then
     fi
 fi
 
+# Language Selection (Interactive)
+if [ -t 0 ] || [ -c /dev/tty ]; then
+  echo ""
+  echo "🌍 Output Language"
+  echo "   1) English (default)"
+  echo "   2) 한국어 (Korean)"
+  echo "   3) 日本語 (Japanese)"
+  echo "   4) 中文 (Chinese)"
+  echo -n "   Select [1-4]: "
+  read -r LANG_CHOICE < /dev/tty || LANG_CHOICE="1"
+
+  case $LANG_CHOICE in
+    2)
+      cat > ~/.claude/rules/language.md <<'LANGEOF'
+# Language Policy
+Respond in Korean (한국어). Code, commands, technical terms in English.
+LANGEOF
+      echo "✅ Output language: Korean"
+      ;;
+    3)
+      cat > ~/.claude/rules/language.md <<'LANGEOF'
+# Language Policy
+Respond in Japanese (日本語). Code, commands, technical terms in English.
+LANGEOF
+      echo "✅ Output language: Japanese"
+      ;;
+    4)
+      cat > ~/.claude/rules/language.md <<'LANGEOF'
+# Language Policy
+Respond in Chinese (中文). Code, commands, technical terms in English.
+LANGEOF
+      echo "✅ Output language: Chinese"
+      ;;
+    *)
+      # English: no language.md needed (Claude defaults to English)
+      rm -f ~/.claude/rules/language.md
+      echo "✅ Output language: English"
+      ;;
+  esac
+fi
+
 # Make scripts executable (Recursive)
 find ~/.claude/scripts -name "*.sh" -exec chmod +x {} \;
 find ~/.claude/scripts -name "*.js" -exec chmod +x {} \;
@@ -103,3 +148,7 @@ echo "  claude"
 echo "  > /plan Design a new feature"
 echo "  > /dplan Analyze complex architecture"
 echo "  > /do Implement the login page"
+echo ""
+echo "Language:"
+echo "  To change language: edit ~/.claude/rules/language.md"
+echo "  To use English: rm ~/.claude/rules/language.md"
