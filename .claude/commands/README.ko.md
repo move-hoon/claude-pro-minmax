@@ -29,16 +29,16 @@
 ### 실행 명령어
 | 명령어 | 사용 시점 | 리소스 사용량 |
 |---------|-------------|--------------|
-| `/do` | 단순~중간 작업 (1-3 파일). 원자적 배치 실행, 실패 시 롤백 | 최소 (Haiku 기본) |
-| `/do-sonnet` | 깊은 추론이 필요한 복잡한 로직 | 중간 (Sonnet) |
-| `/do-opus` | 중요한 결정, Sonnet 실패 시 | 높음 (Opus—API 가격이 비용 반영) |
-| `/plan` | 다중 파일 작업, 아키텍처 결정 | 중간 (Sonnet → Haiku 체인) |
-| `/dplan` | 연구가 많은 복잡한 아키텍처 | 높음 (Sonnet + MCP 도구) |
+| `/do` | 단순~중간 작업 (1-3 파일). 원자적 배치 실행, 실패 시 롤백 | 최소 (Haiku 4.5 기본) |
+| `/do-sonnet` | 깊은 추론이 필요한 복잡한 로직 | 중간 (Sonnet 4.5) |
+| `/do-opus` | 중요한 결정, Sonnet 실패 시 | 높음 (Opus 4.6—API 가격이 비용 반영) |
+| `/plan` | 다중 파일 작업, 아키텍처 결정 | 중간 (Sonnet 4.5 → Haiku 4.5 체인) |
+| `/dplan` | 연구가 많은 복잡한 아키텍처 | 높음 (Sonnet 4.5 + MCP 도구) |
 
 ### 품질 보증
 | 명령어 | 사용 시점 | 리소스 사용량 |
 |---------|-------------|--------------|
-| `/review` | 구현 후 품질 체크 | 최소 (Haiku, 읽기 전용) |
+| `/review` | 구현 후 품질 체크 | 최소 (Haiku 4.5, 읽기 전용) |
 
 ### 세션 관리
 | 명령어 | 사용 시점 | 리소스 사용량 |
@@ -74,7 +74,7 @@
 # 2. 구현 후 검토
 /review src/services/user-service.ts
 ```
-**Quota:** 낮음 (Haiku 실행 + Haiku 검토)
+**Quota:** 낮음 (Haiku 4.5 실행 + Haiku 4.5 검토)
 
 ### 복잡한 기능 구현
 ```bash
@@ -87,7 +87,7 @@
 # 3. 필요 시 수동 검토
 /review src/auth/
 ```
-**Quota:** 중간 (Sonnet 계획 + Haiku 구현 + Haiku 검토)
+**Quota:** 중간 (Sonnet 4.5 계획 + Haiku 4.5 구현 + Haiku 4.5 검토)
 
 ### 연구 중심 아키텍처
 ```bash
@@ -100,7 +100,7 @@
 # 3. 연구 결과를 바탕으로 구현
 # (복잡도에 따라 /plan 또는 /do 사용)
 ```
-**Quota:** 높음 (Sonnet + Sequential Thinking + Perplexity + Context7)
+**Quota:** 높음 (Sonnet 4.5 + Sequential Thinking + Perplexity + Context7)
 
 ### 디버깅 및 학습
 ```bash
@@ -136,7 +136,7 @@
 
 | 측면 | /do | /do-sonnet | /do-opus | /plan | /dplan |
 |--------|-----|------------|----------|-------|--------|
-| **모델** | Haiku (기본) | Sonnet | Opus | Sonnet → Haiku | Sonnet + MCP |
+| **모델** | Haiku 4.5 (기본) | Sonnet 4.5 | Opus 4.6 | Sonnet 4.5 → Haiku 4.5 | Sonnet 4.5 + MCP |
 | **비용** | 기본 | 중간 | 높음 | 중간 | 높음 |
 | **계획** | 내부 (배치) | 내부 (배치) | 내부 (배치) | 아키텍처 설계 | 심층 연구 |
 | **사용 사례** | 간단한 작업 | 복잡한 로직 | 중요한 결정 | 다중 파일 기능 | 미지의 영역 |

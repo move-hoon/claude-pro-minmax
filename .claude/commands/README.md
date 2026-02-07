@@ -29,16 +29,16 @@ Contains slash command definitions for common workflows.
 ### Execution Commands
 | Command | When to Use | Resource Usage |
 |---------|-------------|----------------|
-| `/do` | Simple-to-medium tasks (1-3 files). Atomic batch with rollback on failure | Minimal (Haiku default) |
-| `/do-sonnet` | Complex logic requiring deeper reasoning | Moderate (Sonnet) |
-| `/do-opus` | Critical decisions, Sonnet failed | Higher (Opus—API pricing reflects cost) |
-| `/plan` | Multi-file tasks, architecture decisions | Moderate (Sonnet → Haiku chain) |
-| `/dplan` | Research-heavy, complex architecture | Higher (Sonnet + MCP tools) |
+| `/do` | Simple-to-medium tasks (1-3 files). Atomic batch with rollback on failure | Minimal (Haiku 4.5 default) |
+| `/do-sonnet` | Complex logic requiring deeper reasoning | Moderate (Sonnet 4.5) |
+| `/do-opus` | Critical decisions, Sonnet failed | Higher (Opus 4.6—API pricing reflects cost) |
+| `/plan` | Multi-file tasks, architecture decisions | Moderate (Sonnet 4.5 → Haiku 4.5 chain) |
+| `/dplan` | Research-heavy, complex architecture | Higher (Sonnet 4.5 + MCP tools) |
 
 ### Quality Assurance
 | Command | When to Use | Resource Usage |
 |---------|-------------|----------------|
-| `/review` | Post-implementation quality check | Minimal (Haiku, read-only) |
+| `/review` | Post-implementation quality check | Minimal (Haiku 4.5, read-only) |
 
 ### Session Management
 | Command | When to Use | Resource Usage |
@@ -74,7 +74,7 @@ Contains slash command definitions for common workflows.
 # 2. Review after implementation
 /review src/services/user-service.ts
 ```
-**Quota:** Low (Haiku execution + Haiku review)
+**Quota:** Low (Haiku 4.5 execution + Haiku 4.5 review)
 
 ### Complex Feature Implementation
 ```bash
@@ -87,7 +87,7 @@ Contains slash command definitions for common workflows.
 # 3. Manual review if needed
 /review src/auth/
 ```
-**Quota:** Medium (Sonnet planning + Haiku implementation + Haiku review)
+**Quota:** Medium (Sonnet 4.5 planning + Haiku 4.5 implementation + Haiku 4.5 review)
 
 ### Research-Heavy Architecture
 ```bash
@@ -100,7 +100,7 @@ Contains slash command definitions for common workflows.
 # 3. Implement based on research findings
 # (Use /plan or /do based on complexity)
 ```
-**Quota:** High (Sonnet + Sequential Thinking + Perplexity + Context7)
+**Quota:** High (Sonnet 4.5 + Sequential Thinking + Perplexity + Context7)
 
 ### Debugging & Learning
 ```bash
@@ -136,7 +136,7 @@ Contains slash command definitions for common workflows.
 
 | Aspect | /do | /do-sonnet | /do-opus | /plan | /dplan |
 |--------|-----|------------|----------|-------|--------|
-| **Model** | Haiku (default) | Sonnet | Opus | Sonnet → Haiku | Sonnet + MCP |
+| **Model** | Haiku 4.5 (default) | Sonnet 4.5 | Opus 4.6 | Sonnet 4.5 → Haiku 4.5 | Sonnet 4.5 + MCP |
 | **Cost** | 1x | 5x | 25x | 6x | 10-15x |
 | **Planning** | Internal (batch) | Internal (batch) | Internal (batch) | Architecture design | Deep research |
 | **Use Case** | Simple tasks | Complex logic | Critical decisions | Multi-file features | Unknown unknowns |
