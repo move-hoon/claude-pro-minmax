@@ -59,6 +59,12 @@ Contains sub-agent definitions for role-based task delegation with model optimiz
 
 **Output Budget:** Success summary MAX 5 lines (file list + verification only). Escalation MAX 8 lines. No full code blocks — file:line references only.
 
+**Rollback Protocol:**
+- Via `/do*`: `scripts/snapshot.sh push` creates labeled stash with depth guard
+- On success: `scripts/snapshot.sh drop` (label-checked, safe no-op if no snapshot)
+- On failure: `scripts/snapshot.sh pop` (label-checked, falls back to `git checkout .`)
+- Prevents dirty state that wastes 2-4 messages on manual cleanup
+
 ### @reviewer (Code Review)
 **Use for:**
 - Post-implementation quality check
@@ -95,7 +101,8 @@ flowchart TD
     subgraph Execution ["Phase 2: Implementation"]
         direction TB
         UserAppr -- Yes --> Builder[/"@builder (Haiku)"/]
-        Cmd -->|/do| Builder
+        Cmd -->|/do| Snap["git stash"]
+        Snap --> Builder
         
         %% Safe Execution Loop
         Builder --> Verify{Verify?}
@@ -103,12 +110,14 @@ flowchart TD
     end
     
     %% Branch 3: Escalation (Model Upgrade)
-    Verify -- "Fail (x2)" --> Escalate(STOP & Suggest)
+    Verify -- "Fail (x2)" --> Pop["git stash pop"]
+    Pop --> Escalate(STOP & Suggest)
     Escalate -.->|"/do-sonnet"| SonnetExec[/"@builder (Sonnet)"/]
     SonnetExec --> Verify
     
     %% Branch 4: Completion
-    Verify -->|Success| Reviewer[/"@reviewer"/]
+    Verify -->|Success| Drop["git stash drop"]
+    Drop --> Reviewer[/"@reviewer"/]
     Reviewer --> Done([Complete])
 
     %% Styling
@@ -117,7 +126,7 @@ flowchart TD
     classDef term fill:#e0f2f1,stroke:#00695c,stroke-width:2px;
     classDef fail fill:#ffebee,stroke:#c62828,stroke-width:2px,stroke-dasharray: 5 5;
     
-    class Planner,DPlanner,Builder,Reviewer,SonnetExec agent;
+    class Planner,DPlanner,Builder,Reviewer,SonnetExec,Snap,Pop,Drop agent;
     class Cmd,Verify,UserAppr logic;
     class Start,Done,Escalate term;
 ```
@@ -135,6 +144,7 @@ flowchart TD
 | @reviewer read-only enforcement | Hook-based blocking (`readonly-check.sh`). Prevents accidental modifications during review |
 | @dplanner with MCP tools | Research-heavy tasks justify MCP overhead. `sequential-thinking` + `perplexity` + `context7` enable fail-proof planning |
 | Output Budget per agent | Output costs 5x Input (API pricing). Strict budgets: builder 5 lines, reviewer 1 line PASS / 30 lines FAIL, dplanner 60 lines, planner 1 sentence/task |
+| @builder atomic rollback | `scripts/snapshot.sh` handles `git stash` with depth guard + label check before `/do` execution. Prevents popping unrelated user stashes. Failure triggers `pop` (or `git checkout .` on clean tree) → clean state for immediate escalation. Saves 2-4 messages per failure, zero API cost |
 
 ## Adding Custom Agents
 

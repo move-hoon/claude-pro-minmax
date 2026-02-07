@@ -9,7 +9,7 @@
 
 | 커맨드 | 목적 | 주요 기능 |
 |---------|---------|-------------|
-| `do.md` | 배치 실행 | Plan+build+verify를 한 번에 처리. /do-sonnet으로 모델 재정의 |
+| `do.md` | 배치 실행 | 원자적 plan+build+verify 한 번에 처리, 실패 시 롤백 |
 | `do-sonnet.md` | Sonnet으로 실행 | context: fork, model: sonnet |
 | `do-opus.md` | Opus로 실행 | context: fork, model: opus |
 | `plan.md` | 복잡한 작업 | @planner → @builder 체인 |
@@ -29,7 +29,7 @@
 ### 실행 명령어
 | 명령어 | 사용 시점 | 리소스 사용량 |
 |---------|-------------|--------------|
-| `/do` | 단순~중간 작업 (1-3 파일). 배치 plan+build+verify | 최소 (Haiku 기본) |
+| `/do` | 단순~중간 작업 (1-3 파일). 원자적 배치 실행, 실패 시 롤백 | 최소 (Haiku 기본) |
 | `/do-sonnet` | 깊은 추론이 필요한 복잡한 로직 | 중간 (Sonnet) |
 | `/do-opus` | 중요한 결정, Sonnet 실패 시 | 높음 (Opus—API 가격이 비용 반영) |
 | `/plan` | 다중 파일 작업, 아키텍처 결정 | 중간 (Sonnet → Haiku 체인) |

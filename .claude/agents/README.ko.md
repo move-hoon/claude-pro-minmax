@@ -59,6 +59,12 @@
 
 **출력 예산:** 성공 요약 MAX 5줄 (파일 목록 + 검증 결과만). 에스컬레이션 MAX 8줄. 전체 코드 블록 없이 file:line 참조만.
 
+**롤백 프로토콜:**
+- `/do*` 경유 시: `scripts/snapshot.sh push`로 depth guard 포함 라벨 스냅샷 생성
+- 성공 시: `scripts/snapshot.sh drop` (라벨 확인, 스냅샷 없으면 안전한 no-op)
+- 실패 시: `scripts/snapshot.sh pop` (라벨 확인, 없으면 `git checkout .` 폴백)
+- dirty state로 인한 수동 정리 2-4 메시지 낭비 방지
+
 ### @reviewer (코드 검토)
 **사용 시점:**
 - 구현 후 품질 체크
@@ -95,7 +101,8 @@ flowchart TD
     subgraph Execution ["Phase 2: Implementation"]
         direction TB
         UserAppr -- Yes --> Builder[/"@builder (Haiku)"/]
-        Cmd -->|/do| Builder
+        Cmd -->|/do| Snap["git stash"]
+        Snap --> Builder
         
         %% Safe Execution Loop
         Builder --> Verify{Verify?}
@@ -103,12 +110,14 @@ flowchart TD
     end
     
     %% Branch 3: Escalation (Model Upgrade)
-    Verify -- "Fail (x2)" --> Escalate(STOP & Suggest)
+    Verify -- "Fail (x2)" --> Pop["git stash pop"]
+    Pop --> Escalate(STOP & Suggest)
     Escalate -.->|"/do-sonnet"| SonnetExec[/"@builder (Sonnet)"/]
     SonnetExec --> Verify
     
     %% Branch 4: Completion
-    Verify -->|Success| Reviewer[/"@reviewer"/]
+    Verify -->|Success| Drop["git stash drop"]
+    Drop --> Reviewer[/"@reviewer"/]
     Reviewer --> Done([Complete])
 
     %% Styling
@@ -117,7 +126,7 @@ flowchart TD
     classDef term fill:#e0f2f1,stroke:#00695c,stroke-width:2px;
     classDef fail fill:#ffebee,stroke:#c62828,stroke-width:2px,stroke-dasharray: 5 5;
     
-    class Planner,DPlanner,Builder,Reviewer,SonnetExec agent;
+    class Planner,DPlanner,Builder,Reviewer,SonnetExec,Snap,Pop,Drop agent;
     class Cmd,Verify,UserAppr logic;
     class Start,Done,Escalate term;
 ```
@@ -135,6 +144,7 @@ flowchart TD
 | @reviewer 읽기 전용 강제 | Hook 기반 차단(`readonly-check.sh`). 검토 중 실수로 수정하는 것 방지 |
 | @dplanner에 MCP 도구 제공 | 연구가 많은 작업은 MCP 오버헤드 정당화 가능. `sequential-thinking` + `perplexity` + `context7`로 실패 없는 계획 가능 |
 | 에이전트별 출력 예산 | Output은 Input의 5배 비용 (API 가격). 엄격한 예산: builder 5줄, reviewer 1줄 PASS / 30줄 FAIL, dplanner 60줄, planner 1문장/작업 |
+| @builder 원자적 롤백 | `scripts/snapshot.sh`가 depth guard + 라벨 확인 포함 `git stash` 처리. 무관한 사용자 stash pop 방지. 실패 시 `pop` (또는 clean tree에서 `git checkout .`) → 즉시 에스컬레이션 가능한 깨끗한 상태. 실패당 2-4 메시지 절약, API 비용 0 |
 
 ## 커스텀 에이전트 추가
 

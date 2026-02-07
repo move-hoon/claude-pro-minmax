@@ -40,6 +40,7 @@ runtime/
 | `analyze-failures.sh` | Analyze tool failure logs and extract patterns | Preprocesses logs before LLM analysis |
 | `create-branch.sh` | Deterministic branch creation | Consistent naming, no guessing |
 | `commit.sh` | Conventional commit format | Enforces convention automatically |
+| `snapshot.sh` | Atomic rollback for `/do` commands | Deterministic `git stash` with depth guard + label safety |
 
 ## Hooks Directory
 
@@ -47,7 +48,7 @@ runtime/
 |-------------|-------|---------|----------------|
 | `hooks/critical-action-check.sh` | PreToolUse | Block dangerous commands | Local (zero), blocking message if triggered |
 | `hooks/post-edit-format.sh` | PostToolUse | Auto-format edited files | Local (zero) |
-| `hooks/compact-suggest.sh` | PostToolUse | Suggest /compact at 50 calls | Local (zero), suggestion message minimal |
+| `hooks/compact-suggest.sh` | PostToolUse | 3-tier compact warnings (25 advisory / 50 warning / 75 critical) | Local (zero), ~30 tokens per tier |
 | `hooks/notification.sh` | Notification | Desktop alerts | Local (zero) |
 | `hooks/session-start.sh` | SessionStart | Env setup + budget reminder + session notify | Local (zero), ~40 input tokens for budget context |
 | `hooks/session-cleanup.sh` | SessionEnd | Scrub secrets from sessions | Local (zero) |

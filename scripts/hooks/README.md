@@ -65,7 +65,7 @@ flowchart TB
 |--------|-------|---------|----------------|
 | `critical-action-check.sh` | PreToolUse | Block dangerous Bash commands | Local (zero), blocking message if triggered |
 | `post-edit-format.sh` | PostToolUse | Auto-format edited files | Local (zero) |
-| `compact-suggest.sh` | PostToolUse | Suggest /compact at 50 tool calls | Local (zero), suggestion message minimal |
+| `compact-suggest.sh` | PostToolUse | 3-tier compact warnings (25 advisory / 50 warning / 75 critical) | Local (zero), ~30 tokens per tier |
 | `notification.sh` | Notification | Desktop alert on permission/idle | Local (zero) |
 | `session-start.sh` | SessionStart | Env setup + budget reminder + session notify | Local (zero), ~40 input tokens for budget context |
 | `session-cleanup.sh` | SessionEnd | Scrub secrets + save session summary | Local (zero) |

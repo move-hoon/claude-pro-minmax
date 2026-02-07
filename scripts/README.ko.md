@@ -40,6 +40,7 @@ runtime/
 | `analyze-failures.sh` | 도구 실패 로그 분석 및 패턴 추출 | LLM 분석 전 로그 전처리 |
 | `create-branch.sh` | 결정론적 브랜치 생성 | 일관된 명명, 추측 불필요 |
 | `commit.sh` | Conventional Commit 형식 | 컨벤션 자동 적용 |
+| `snapshot.sh` | `/do` 명령의 원자적 롤백 | 결정론적 `git stash` + depth guard + 라벨 안전장치 |
 
 ## Hooks 디렉토리
 
@@ -47,7 +48,7 @@ runtime/
 |-------------|-------|---------|------------|
 | `hooks/critical-action-check.sh` | PreToolUse | 위험한 명령 차단 | 로컬 (무료), 차단 시 메시지 |
 | `hooks/post-edit-format.sh` | PostToolUse | 편집된 파일 자동 포맷 | 로컬 (무료) |
-| `hooks/compact-suggest.sh` | PostToolUse | 50회 호출 시 /compact 제안 | 로컬 (무료), 제안 메시지는 최소 |
+| `hooks/compact-suggest.sh` | PostToolUse | 3단계 컴팩션 경고 (25 권고 / 50 경고 / 75 위험) | 로컬 (무료), 티어당 ~30 토큰 |
 | `hooks/notification.sh` | Notification | 데스크톱 알림 | 로컬 (무료) |
 | `hooks/session-start.sh` | SessionStart | 환경변수 설정 + 예산 알림 + 세션 알림 | 로컬 (무료), 예산 컨텍스트 ~40 입력 토큰 |
 | `hooks/session-cleanup.sh` | SessionEnd | 세션에서 비밀 정보 제거 | 로컬 (무료) |

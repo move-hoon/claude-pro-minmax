@@ -9,7 +9,7 @@ Contains slash command definitions for common workflows.
 
 | Command | Purpose | Key Feature |
 |---------|---------|-------------|
-| `do.md` | Batch execution | Plan+build+verify in ONE response. /do-sonnet for model override |
+| `do.md` | Batch execution | Atomic plan+build+verify in ONE response with rollback on failure |
 | `do-sonnet.md` | Execute with Sonnet | context: fork, model: sonnet |
 | `do-opus.md` | Execute with Opus | context: fork, model: opus |
 | `plan.md` | Complex tasks | @planner → @builder chain |
@@ -29,7 +29,7 @@ Contains slash command definitions for common workflows.
 ### Execution Commands
 | Command | When to Use | Resource Usage |
 |---------|-------------|----------------|
-| `/do` | Simple-to-medium tasks (1-3 files). Batch plan+build+verify | Minimal (Haiku default) |
+| `/do` | Simple-to-medium tasks (1-3 files). Atomic batch with rollback on failure | Minimal (Haiku default) |
 | `/do-sonnet` | Complex logic requiring deeper reasoning | Moderate (Sonnet) |
 | `/do-opus` | Critical decisions, Sonnet failed | Higher (Opus—API pricing reflects cost) |
 | `/plan` | Multi-file tasks, architecture decisions | Moderate (Sonnet → Haiku chain) |
