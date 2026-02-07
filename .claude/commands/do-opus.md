@@ -15,19 +15,19 @@ $ARGUMENTS
 
 ## Protocol
 1. Check CRITICAL_ACTIONS → confirm if found
-2. **Snapshot**: `scripts/snapshot.sh push cpmm-opus`
+2. **Snapshot**: `~/.claude/scripts/snapshot.sh push cpmm-opus`
 3. Execute immediately (no planner)
-4. Verify with `scripts/verify.sh` (runtime-adaptive)
-5. **On Success**: `scripts/snapshot.sh drop`
-6. **On Failure (2 retries)**: `scripts/snapshot.sh pop`. Then STOP + escalate.
+4. Verify with `~/.claude/scripts/verify.sh` (runtime-adaptive)
+5. **On Success**: `~/.claude/scripts/snapshot.sh drop`
+6. **On Failure (2 retries)**: `~/.claude/scripts/snapshot.sh pop`. Then STOP + escalate.
 
 ## Verification (Runtime-Adaptive)
 | Type | Verification |
 |------|--------------|
 | Config/Docs/Styles | Syntax only |
-| Logic changes | `scripts/verify.sh` |
+| Logic changes | `~/.claude/scripts/verify.sh` |
 
-DO NOT call build tools directly. Use `scripts/verify.sh`.
+DO NOT call build tools directly. Use `~/.claude/scripts/verify.sh`.
 
 ## Cost Note
 Opus is the most expensive model. Use only when:

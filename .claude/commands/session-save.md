@@ -14,7 +14,7 @@ $ARGUMENTS
 
 ## Execution
 1. Collect session state (completed tasks, next actions, context)
-2. Scrub 15+ secret patterns via `scripts/scrub-secrets.js`
+2. Scrub 15+ secret patterns via `~/.claude/scripts/scrub-secrets.js`
 3. Save to session file
 
 ## File Naming Options

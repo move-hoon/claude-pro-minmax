@@ -16,13 +16,13 @@ $ARGUMENTS
 ## Execution
 ```bash
 # tests: Watch test execution
-tmux new-session -d -s claude-watch-tests "scripts/test.sh --watch"
+tmux new-session -d -s claude-watch-tests "~/.claude/scripts/test.sh --watch"
 
 # dev: Watch dev server
-tmux new-session -d -s claude-watch-dev "scripts/build.sh --dev"
+tmux new-session -d -s claude-watch-dev "~/.claude/scripts/build.sh --dev"
 
 # build: Watch build process
-tmux new-session -d -s claude-watch-build "scripts/build.sh"
+tmux new-session -d -s claude-watch-build "~/.claude/scripts/build.sh"
 
 # custom: User-defined command
 tmux new-session -d -s claude-watch-custom "[cmd]"
@@ -31,9 +31,9 @@ tmux new-session -d -s claude-watch-custom "[cmd]"
 ## Preset Types
 | Type | Command | Session Name |
 |------|---------|--------------|
-| tests | `scripts/test.sh --watch` | claude-watch-tests |
-| dev | `scripts/build.sh --dev` | claude-watch-dev |
-| build | `scripts/build.sh` | claude-watch-build |
+| tests | `~/.claude/scripts/test.sh --watch` | claude-watch-tests |
+| dev | `~/.claude/scripts/build.sh --dev` | claude-watch-dev |
+| build | `~/.claude/scripts/build.sh` | claude-watch-build |
 | custom | User-defined | claude-watch-custom |
 
 ## tmux Controls

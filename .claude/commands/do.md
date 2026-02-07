@@ -18,12 +18,12 @@ $ARGUMENTS
 
 ## Protocol
 1. Check CRITICAL_ACTIONS → confirm if found
-2. **Snapshot**: `scripts/snapshot.sh push` → outputs `SNAPSHOT=true` or `SNAPSHOT=false`
+2. **Snapshot**: `~/.claude/scripts/snapshot.sh push` → outputs `SNAPSHOT=true` or `SNAPSHOT=false`
 3. **Internal Planning** (no agent call): Identify files to modify, changes needed, verify approach
 4. **Execute all changes** in a single pass
-5. Verify with `scripts/verify.sh` (runtime-adaptive)
-6. **On Success**: `scripts/snapshot.sh drop` (auto-checks label — safe no-op if no snapshot)
-7. **On Failure (2 retries exhausted)**: `scripts/snapshot.sh pop` (restores snapshot or `git checkout .` fallback). Then escalate.
+5. Verify with `~/.claude/scripts/verify.sh` (runtime-adaptive)
+6. **On Success**: `~/.claude/scripts/snapshot.sh drop` (auto-checks label — safe no-op if no snapshot)
+7. **On Failure (2 retries exhausted)**: `~/.claude/scripts/snapshot.sh pop` (restores snapshot or `git checkout .` fallback). Then escalate.
 
 ## Batch Execution
 This command handles plan+build+verify in ONE response.
@@ -33,7 +33,7 @@ This command handles plan+build+verify in ONE response.
 - Result: user sends 1 message, receives 1 complete response
 
 ## Atomic Rollback
-All rollback logic is in `scripts/snapshot.sh` (deterministic, not model-reasoned):
+All rollback logic is in `~/.claude/scripts/snapshot.sh` (deterministic, not model-reasoned):
 - **`push`**: Depth guard + labeled stash. Returns `SNAPSHOT=true/false`.
 - **`drop`**: Label check before drop. Safe no-op if no cpmm stash exists.
 - **`pop`**: Label check before pop. Falls back to `git checkout .` if no cpmm stash.
@@ -44,9 +44,9 @@ All rollback logic is in `scripts/snapshot.sh` (deterministic, not model-reasone
 | Type | Verification |
 |------|--------------|
 | Config/Docs/Styles | Syntax only |
-| Logic changes | `scripts/verify.sh` |
+| Logic changes | `~/.claude/scripts/verify.sh` |
 
-DO NOT call build tools directly. Use `scripts/verify.sh`.
+DO NOT call build tools directly. Use `~/.claude/scripts/verify.sh`.
 
 ## Escalation
 ```

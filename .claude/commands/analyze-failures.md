@@ -16,11 +16,11 @@ Analyze tool failure logs to identify recurring errors and suggest patterns for 
 Run the bash script to parse `~/.claude/logs/tool-failures.log`:
 
 ```bash
-bash scripts/analyze-failures.sh "$ARGUMENTS"
+bash ~/.claude/scripts/analyze-failures.sh "$ARGUMENTS"
 ```
 
 ## How It Works
-1. **Collection**: Failures are automatically logged by `scripts/hooks/tool-failure-log.sh` (Zero-cost).
+1. **Collection**: Failures are automatically logged by `~/.claude/scripts/hooks/tool-failure-log.sh` (Zero-cost).
 2. **Analysis**: This command uses `awk` to aggregate and count errors locally (Zero-cost for generation).
 3. **Insight**: The output summary is added to context, allowing Claude to offer specific advice if needed.
 
