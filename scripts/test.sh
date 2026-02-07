@@ -4,7 +4,8 @@
 set -euo pipefail
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
-RUNTIME_DIR="$PROJECT_DIR/scripts/runtime"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RUNTIME_DIR="$SCRIPT_DIR/runtime"
 
 # Detect runtime
 RUNTIME=$("$RUNTIME_DIR/detect.sh" "$@")
