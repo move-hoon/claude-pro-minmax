@@ -167,7 +167,7 @@ ls -la .claude/sessions/
 find .claude/sessions/ -mtime +30 -delete
 
 # 수동 스크러빙 (필요한 경우)
-node scripts/scrub-secrets.js < session.md > clean.md
+node ~/.claude/scripts/scrub-secrets.js < session.md > clean.md
 ```
 
 ## Claude 내장 세션 명령어
@@ -188,5 +188,5 @@ node scripts/scrub-secrets.js < session.md > clean.md
 2. 긴 휴식 전 (>4시간) 저장
 3. 설명적인 이름 사용
 4. 주기적으로 오래된 세션 정리
-5. **스크립트 실행 권한 확인**: `chmod +x scripts/hooks/*.sh`
+5. **스크립트 실행 권한 확인**: `chmod +x ~/.claude/scripts/hooks/*.sh`
 

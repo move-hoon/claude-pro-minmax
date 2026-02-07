@@ -167,7 +167,7 @@ ls -la .claude/sessions/
 find .claude/sessions/ -mtime +30 -delete
 
 # Manual scrub (if needed)
-node scripts/scrub-secrets.js < session.md > clean.md
+node ~/.claude/scripts/scrub-secrets.js < session.md > clean.md
 ```
 
 ## Claude Built-in Session Commands
@@ -188,5 +188,5 @@ In addition to custom `/session-save` and `/session-load`, Claude Code has built
 2. Save before long breaks (>4 hours)
 3. Use descriptive names
 4. Prune old sessions periodically
-5. **Ensure scripts are executable**: `chmod +x scripts/hooks/*.sh`
+5. **Ensure scripts are executable**: `chmod +x ~/.claude/scripts/hooks/*.sh`
 

@@ -17,5 +17,5 @@
 - Meaningful names (verb + noun)
 
 ## Formatting
-- Use `scripts/runtime/adapters/*.sh` → `adapter_format()`
+- Use `~/.claude/scripts/runtime/adapters/*.sh` → `adapter_format()`
 - Prettier (JS/TS), ktlint (Kotlin), gofmt (Go), rustfmt (Rust), black (Python)

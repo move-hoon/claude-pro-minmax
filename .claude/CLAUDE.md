@@ -33,12 +33,12 @@ Pro Plan constraints. Every message = quota. Optimize for Pass@1.
 | Change Type | Verification |
 |-------------|-------------|
 | Config, Docs, Styles (<5 lines) | Syntax check only |
-| Logic changes | `scripts/verify.sh` |
-| New features | `scripts/verify.sh` + tests |
+| Logic changes | `~/.claude/scripts/verify.sh` |
+| New features | `~/.claude/scripts/verify.sh` + tests |
 
 ⚠️ Never call build tools directly:
 - ❌ `npm test`, `./gradlew test`, `cargo test`
-- ✅ `scripts/verify.sh`
+- ✅ `~/.claude/scripts/verify.sh`
 
 ## AGENTS
 
