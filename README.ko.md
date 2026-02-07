@@ -15,7 +15,7 @@ Pro Plan 제약에 최적화된 Claude Code 설정입니다.
 
 > [!TIP]
 > **🚀 3초 요약: 왜 이걸 써야 하나요?**
-> 1.  **배치 + 저비용 모델:** `/do` 하나로 **Haiku(Opus의 1/5 비용)** 에게 plan+build+verify를 한 번에 처리시킵니다.
+> 1.  **배치 + 저비용 모델:** `/do` 하나로 **Haiku 4.5(Opus 4.6의 1/5 비용)** 에게 plan+build+verify를 한 번에 처리시킵니다.
 > 2.  **출력 비용 인식:** 에이전트 응답 예산 + CLI 필터링으로 **Input 대비 5배 비싼** Output 토큰을 절감합니다.
 > 3.  **무비용 안전장치:** **11개 로컬 Hook** + **원자적 롤백** — API 토큰 소비 없이 모든 안전장치가 동작합니다.
 
@@ -70,21 +70,21 @@ Perplexity를 설치 시 건너뛰었다면 나중에 수동으로 설정할 수
 
 ### 🤖 에이전트 워크플로우
 
-CPMM은 작업의 복잡도에 따라 Sonnet(설계)과 Haiku(구현)를 자동으로 오가며 최적의 효율을 냅니다.
+CPMM은 작업의 복잡도에 따라 Sonnet 4.5(설계)과 Haiku 4.5(구현)를 자동으로 오가며 최적의 효율을 냅니다.
 
 ```mermaid
 flowchart LR
     Start([User Request]) --> Cmd{Command?}
 
-    Cmd -->|/plan| Plan[/"@planner (Sonnet)"/]
+    Cmd -->|/plan| Plan[/"@planner (Sonnet 4.5)"/]
     Cmd -->|/do| Snap["📸 git stash push"]
 
-    Snap --> Build[/"@builder (Haiku)"/]
+    Snap --> Build[/"@builder (Haiku 4.5)"/]
     Plan -->|Blueprint| Build
     Build -- "Success" --> Drop["🗑️ git stash drop"]
-    Drop --> Review[/"@reviewer (Haiku)"/]
+    Drop --> Review[/"@reviewer (Haiku 4.5)"/]
     Build -- "Failure (2x)" --> Pop["⏪ git stash pop"]
-    Pop --> Escalate("🚨 Escalate to Sonnet")
+    Pop --> Escalate("🚨 Escalate to Sonnet 4.5")
 
     Review --> Done([Done])
     Escalate -.-> Review
@@ -112,9 +112,9 @@ flowchart LR
 
 | 명령어 | 설명 | 추천 상황 |
 | --- | --- | --- |
-| `/do [작업]` | **Haiku**로 빠르게 구현 | 간단한 버그 수정, 스크립트 작성 |
-| `/plan [작업]` | **Sonnet** 설계 → **Haiku** 구현 | 기능 추가, 리팩토링, 복잡한 로직 |
-| `/review [대상]` | **Haiku** (읽기 전용) | 코드 리뷰 (파일 또는 디렉토리 지정 가능) |
+| `/do [작업]` | **Haiku 4.5**로 빠르게 구현 | 간단한 버그 수정, 스크립트 작성 |
+| `/plan [작업]` | **Sonnet 4.5** 설계 → **Haiku 4.5** 구현 | 기능 추가, 리팩토링, 복잡한 로직 |
+| `/review [대상]` | **Haiku 4.5** (읽기 전용) | 코드 리뷰 (파일 또는 디렉토리 지정 가능) |
 
 <details>
 <summary><strong>🚀 심화 명령어 (Advanced Commands) - Click to Expand</strong></summary>
@@ -124,9 +124,9 @@ flowchart LR
 | 명령어 | 설명 | 추천 상황 |
 | :--- | :--- | :--- |
 | **🧠 심층 실행** | | |
-| `/dplan [작업]` | **Sonnet** + Perplexity, Sequential Thinking, Context7 | 라이브러리 비교, 최신 기술 조사 (심층 연구) |
-| `/do-sonnet` | **Sonnet**으로 직접 실행 | Haiku가 계속 실패할 때 수동 격상 |
-| `/do-opus` | **Opus**로 직접 실행 | 매우 복잡한 문제 해결 (비용 주의) |
+| `/dplan [작업]` | **Sonnet 4.5** + Perplexity, Sequential Thinking, Context7 | 라이브러리 비교, 최신 기술 조사 (심층 연구) |
+| `/do-sonnet` | **Sonnet 4.5**로 직접 실행 | Haiku 4.5가 계속 실패할 때 수동 격상 |
+| `/do-opus` | **Opus 4.6**으로 직접 실행 | 매우 복잡한 문제 해결 (비용 주의) |
 | **💾 세션/컨텍스트** | | |
 | `/session-save` | 세션 요약 및 저장 | 작업 중단 시 (시크릿 자동 제거) |
 | `/session-load` | 세션 불러오기 | 이전 작업 재개 |
@@ -144,6 +144,9 @@ flowchart LR
 
 ## 핵심 전략
 
+> [!NOTE]
+> Anthropic의 정확한 Quota 알고리즘은 비공개입니다. 본 설정은 **API 가격 및 검증된 비용 요인**을 기반으로 최적화하며, 실제 결과는 작업 복잡도에 따라 달라질 수 있습니다.
+
 Claude Pro Plan에는 Claude Code 사용 방식을 근본적으로 바꾸는 제약이 있습니다:
 
 - **5시간 Rolling 리셋**: 5시간마다 사용량이 리셋되어 짧고 집중된 세션을 권장합니다.
@@ -156,9 +159,9 @@ CPMM은 이 각각을 해결합니다:
 
 | Pro Plan 과제 | CPMM 해법 |
 |---|---|
-| Opus가 단순 작업에도 quota 소모 | **Haiku 기본** (1/5 비용) — 필요할 때만 에스컬레이션 |
+| Opus 4.6이 단순 작업에도 quota 소모 | **Haiku 4.5 기본** (1/5 비용) — 필요할 때만 에스컬레이션 |
 | 출력이 입력의 5배 비용 | **에이전트 응답 예산** (builder: 5줄, reviewer: 1줄 PASS) |
-| 다단계 파이프라인이 메시지 낭비 | **배치 `/do`** — plan+build+verify를 ONE 메시지로 (2 msg vs 6+) |
+| 다단계 파이프라인이 메시지 낭비 | **배치 `/do`** — plan+build+verify를 한 번에 (사용자 1회 요청 → 1회 응답, 순차 방식은 6+ 왕복) |
 | Context 증가 → 메시지당 비용 증가 | **3단계 compact 경고** (25/50/75) + 75% 자동 컴팩션 |
 | 실패 시 dirty state 방치 | **원자적 롤백** (`git stash` 스냅샷 → 실패 시 깨끗한 복원) |
 | Hook/스크립트가 API 호출 소비 | **11개 로컬 Hook** — 모든 강제 실행이 로컬, API 비용 0 |
@@ -169,12 +172,14 @@ CPMM은 이 각각을 해결합니다:
 이 설정은 작업당 Quota 소비를 줄여 생산적인 작업 시간을 연장하도록 설계되었습니다. 목표는 "제한 우회"가 아니라, **리소스 효율성 최적화**를 통해 할당량을 소진하지 않고 더 오래 작업하는 것입니다.
 
 ### 2. 접근 방식 (Approach)
-Anthropic이 정확한 알고리즘을 공개하지 않았지만, Quota 소비는 다음 요인에 영향을 받습니다. 이 프로젝트는 하나의 원칙으로 모두 최적화합니다: **메시지당 최대 가치 (Maximum Value Per Message).**
+Anthropic이 정확한 알고리즘을 공개하지 않았지만, Quota 소비는 다음 요인에 영향을 받습니다. 이 프로젝트는 다음의 단일 원칙으로 모든 요소를 최적화합니다.
 
-* **모델 비용 (핵심 — 5배):** Haiku는 Opus의 1/5 비용 (API 가격 기준). 작업 가능한 최저 비용 모델 사용.
+> **메시지당 최대 가치 (Maximum Value Per Message)**
+
+* **모델 비용 (핵심 — 5배):** Haiku 4.5는 Opus 4.6의 1/5 비용 ($1 vs $5 /MTok input). 작업 가능한 최저 비용 모델 사용.
 * **출력 토큰 (고영향 — 5배):** Output은 Input의 5배 비용 (API 가격 기준). 모든 에이전트에 응답 예산 적용.
 * **메시지 수 (직접):** 메시지 수 = quota 소비. `/do` 한 번에 plan+build+verify를 배치 처리.
-* **CLI 필터링:** `jq`, `mgrep`로 도구 출력 토큰 감소, input과 output 모두 축소.
+* **CLI 필터링:** `mgrep`로 도구 출력 ~50% 감소 ([벤치마크 검증](https://x.com/affaanmustafa/status/2014040193557471352)). `jq`로 구조화 데이터에서 불필요한 필드 제거.
 
 ### 3. 실행 전략: 가치 우선 워크플로우
 
@@ -189,13 +194,13 @@ Anthropic이 정확한 알고리즘을 공개하지 않았지만, Quota 소비�
     * 설계 단계 자체를 검증한 후 구현해야 할 때 사용합니다.
 
 3.  **작업당 비용 최소화**
-    * `@builder` (Haiku): 구현 담당 (Opus의 1/5 비용).
-    * `@planner` (Sonnet): 아키텍처 설계 (균형 잡힌 능력과 비용).
-    * **Opus**: 에스컬레이션 전용 — 명시적 `/do-opus`로 비용 가시화.
+    * `@builder` (Haiku 4.5): 구현 담당 ($1/MTok — Opus 4.6의 1/5).
+    * `@planner` (Sonnet 4.5): 아키텍처 설계 ($3/MTok — 균형 잡힌 능력과 비용).
+    * **Opus 4.6**: 에스컬레이션 전용 ($5/MTok) — 명시적 `/do-opus`로 비용 가시화.
 
 4.  **안전한 에스컬레이션 경로 (Safety Ladder)**
-    * Haiku 실패 (2회 재시도 후) → Sonnet으로 격상 (`/do-sonnet`).
-    * Sonnet 실패 → Opus로 격상 (`/do-opus`).
+    * Haiku 4.5 실패 (2회 재시도 후) → Sonnet 4.5로 격상 (`/do-sonnet`).
+    * Sonnet 4.5 실패 → Opus 4.6으로 격상 (`/do-opus`).
     * 명시적 모델 선택으로 비용을 인지하게 합니다.
 
 5.  **원자적 롤백 (실패 복구)**
@@ -209,43 +214,18 @@ Anthropic이 정확한 알고리즘을 공개하지 않았지만, Quota 소비�
 ## 📊 결과 및 비교
 
 **주요 기대 효과:**
-✅ 모델 비용 최적화로 훨씬 긴 세션 (Haiku = Opus의 1/5).
-✅ 배치 실행(`/do`)으로 작업당 더 적은 메시지.
-✅ 엄격한 에이전트 응답 예산으로 출력 토큰 감소.
 
-> [!NOTE]
-> **참고:** Anthropic의 정확한 Quota 알고리즘은 비공개입니다. 본 설정은 API 가격 및 검증된 비용 요인을 기반으로 최적화하며, 실제 결과는 작업 복잡도에 따라 달라질 수 있습니다.
-
-### 비용 비교: 배치 vs 순차
-
-> 진짜 절약은 **더 적고, 더 싼 메시지를 보내는 것**에서 오지, 실행 순서에서 오지 않습니다.
-
-```mermaid
-flowchart LR
-    subgraph "🟢 배치 (/do) — 2 메시지"
-        U1[사용자: /do 작업] --> C1[Claude: plan+build+verify]
-        C1 -.- R1[합계: 2 msg]
-    end
-
-    subgraph "🔴 순차 파이프라인 — 6+ 메시지"
-        U2[사용자: /plan] --> P[Planner 출력]
-        P --> U3[사용자: 확인]
-        U3 --> B[Builder 출력]
-        B --> U4[사용자: /review]
-        U4 --> RV[Reviewer 출력]
-        RV -.- R2[합계: 6+ msg]
-    end
-
-    style R1 fill:#c8e6c9,stroke:#2e7d32
-    style R2 fill:#ffcdd2,stroke:#b71c1c
-```
+- ✅ 모델 비용 최적화로 훨씬 긴 세션 (Haiku 4.5 = Opus 4.6의 1/5).
+- ✅ 배치 실행(`/do`)으로 작업당 더 적은 메시지.
+- ✅ 엄격한 에이전트 응답 예산으로 출력 토큰 감소.
 
 | 요소 | 측정 효과 | 메커니즘 |
 |------|----------|----------|
-| **모델 선택** | **5배 비용 절감** | Haiku ($1/MTok) vs Opus ($5/MTok) — API 가격 |
+| **모델 선택** | **5배 비용 절감** | Haiku 4.5 ($1/MTok) vs Opus 4.6 ($5/MTok) — API 가격 |
 | **출력 예산** | **~60% 출력 감소** | 에이전트 응답 제한 (builder: 5줄, reviewer: 1줄 PASS) |
 | **배치 실행** | **~3배 메시지 감소** | `/do` = 2 msg vs 순차 파이프라인 = 6+ msg |
-| **CLI 필터링** | **~50% 도구 출력 감소** | `jq`, `mgrep`로 도구 결과의 input 토큰 감소 |
+| **CLI 필터링 (mgrep)** | **~50% 도구 출력 감소** | 벤치마크: $0.49 → $0.23 per task ([검증됨](https://x.com/affaanmustafa/status/2014040193557471352)) |
+| **CLI 필터링 (jq)** | **불필요한 출력 제거** | 구조화 데이터의 JSON 필드 선택 (추정) |
 | **원자적 롤백** | **실패당 2-4 msg 절약** | `/do` 전 `git stash` 스냅샷 — 실패 시 깨끗한 상태, API 비용 0 |
 
 ---
@@ -263,9 +243,9 @@ Total_Quota ≈ Σ f(model_weight_i, context_size_i, output_size_i)
 
 | 변수 | CPMM 메커니즘 | 감소율 |
 |------|--------------|--------|
-| `model_weight` | Opus(1.67x) 대신 Haiku(0.33x) 사용 | **5배** (API 가격) |
+| `model_weight` | Opus 4.6($5/MTok) 대신 Haiku 4.5($1/MTok) 사용 | **5배** (API 가격 비율 1:5) |
 | `output_size` | 에이전트 응답 예산 (builder: 5줄, reviewer: 1줄) | **~60%** (추정) |
-| `context_size` | CLI 필터링 (`jq`, `mgrep`) + 75% 자동 컴팩션 | **~50%** 도구 출력 (추정) |
+| `context_size` | `mgrep` ~50% 출력 감소 ([검증됨](https://x.com/affaanmustafa/status/2014040193557471352)) + `jq` 필드 선택 (추정) + 75% 자동 컴팩션 | **~50%** mgrep 검증됨 |
 
 **알려진 제한**: 세션 내 메시지가 쌓이면 context가 증가하여 후반 메시지가 더 비쌈. 3단계 컴팩션 경고 (25/50/75 tool calls) + 75% 자동 컴팩션으로 완화.
 
@@ -302,10 +282,11 @@ Total_Quota ≈ Σ f(model_weight_i, context_size_i, output_size_i)
 
 | 요소 | 효과 | 근거 | 상태 |
 |------|------|------|:----:|
-| 모델 선택 | **5배** 비용 절감 | API 가격: Haiku $1 vs Opus $5 /MTok | 검증됨 |
+| 모델 선택 | **5배** 비용 절감 | API 가격: Haiku 4.5 $1 vs Opus 4.6 $5 /MTok input | 검증됨 |
 | 출력 비용 | **5배** 비용 배수 | API 가격: Output = Input의 5배 | 검증됨 |
 | 배치 실행 | **~3배** 메시지 감소 | `/do` = 2 msg vs `/plan` = 6+ msg | 측정됨 |
-| CLI 필터링 | **~50%** 도구 출력 감소 | `jq`, `mgrep` 필드 선택 | 추정 |
+| CLI 필터링 (mgrep) | **~50%** 도구 출력 감소 | 벤치마크: $0.49 → $0.23 per task | 검증됨 |
+| CLI 필터링 (jq) | 불필요한 출력 제거 | 구조화 데이터의 JSON 필드 선택 | 추정 |
 | 원자적 롤백 | 실패당 **2-4 msg** 절약 | `git stash`로 dirty state 방지 | 추정 |
 
 > **종합 효율: 5-8배** (모델 선택 5x 기반, 출력 감소와 메시지 배치로 증폭. 롤백은 낭비 방지이며 배수는 변경 없음.)
@@ -351,10 +332,10 @@ claude-pro-minmax
 │   ├── settings.json           # 프로젝트 설정 (권한, 훅, 환경변수)
 │   ├── settings.local.json     # 로컬 사용자 설정 (Git 제외)
 │   ├── agents/                 # 에이전트 정의
-│   │   ├── planner.md          # Sonnet: 아키텍처 및 설계 결정
-│   │   ├── dplanner.md         # Sonnet+MCP: 외부 도구를 활용한 심층 계획
-│   │   ├── builder.md          # Haiku: 코드 구현 및 리팩토링
-│   │   └── reviewer.md         # Haiku: 읽기 전용 코드 리뷰
+│   │   ├── planner.md          # Sonnet 4.5: 아키텍처 및 설계 결정
+│   │   ├── dplanner.md         # Sonnet 4.5+MCP: 외부 도구를 활용한 심층 계획
+│   │   ├── builder.md          # Haiku 4.5: 코드 구현 및 리팩토링
+│   │   └── reviewer.md         # Haiku 4.5: 읽기 전용 코드 리뷰
 │   ├── commands/               # 슬래시 명령어
 │   │   ├── plan.md             # 아키텍처 계획 (Sonnet -> Haiku)
 │   │   ├── dplan.md            # 심층 리서치 계획 (Sequential Thinking)
@@ -443,7 +424,7 @@ claude-pro-minmax
 <summary><strong>Q: 이 설정은 어떻게 Pro Plan quota를 최적화하나요?</strong></summary>
 
 A: Anthropic의 정확한 quota 알고리즘은 공개되지 않았습니다. 세 가지 축으로 최적화합니다:
-- **모델 비용** (검증됨): Haiku는 API 가격 기준 Opus의 1/5.
+- **모델 비용** (검증됨): Haiku 4.5는 API 가격 기준 Opus 4.6의 1/5 ($1 vs $5 /MTok input).
 - **출력 감소** (검증됨): Output 토큰은 Input의 5배 비용. 에이전트 응답 예산 + CLI 필터링으로 출력 감소.
 - **메시지 효율**: `/do`가 plan+build+verify를 한 번에 처리 (순차 파이프라인의 6+ 메시지 vs 2 메시지).
 
@@ -487,7 +468,7 @@ A: macOS와 Linux를 지원합니다. Windows는 WSL을 통해 사용 가능합�
 <details>
 <summary><strong>Q: 왜 모든 작업에 Opus를 사용하지 않나요?</strong></summary>
 
-A: API 가격(컴퓨팅 비용 반영)을 보면 Opus는 Sonnet이나 Haiku보다 훨씬 비쌉니다. 정확한 Pro Plan quota 영향은 공개되지 않았지만, 모든 작업에 Opus를 사용하면 quota가 훨씬 빠르게 소진될 것입니다. 명시적 모델 선택(`/do-opus`)으로 비싼 모델 사용 시 인지할 수 있도록 합니다.
+A: API 가격(컴퓨팅 비용 반영)을 보면 Opus 4.6 ($5/MTok input)은 Sonnet 4.5 ($3/MTok)나 Haiku 4.5 ($1/MTok)보다 훨씬 비쌉니다. 정확한 Pro Plan quota 영향은 공개되지 않았지만, 모든 작업에 Opus 4.6을 사용하면 quota가 훨씬 빠르게 소진될 것입니다. 명시적 모델 선택(`/do-opus`)으로 비싼 모델 사용 시 인지할 수 있도록 합니다.
 </details>
 
 <details>
@@ -504,6 +485,7 @@ A: CPMM은 **원자적 롤백**을 사용합니다. `/do` 실행 전 `git stash 
 ## Credits
 
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — Anthropic 해커톤 우승작. 이 프로젝트의 기반입니다.
+- **[@affaanmustafa](https://x.com/affaanmustafa)** — mgrep 벤치마크 데이터 ($0.49 → $0.23, ~50% 절약), [Longform Guide to Everything Claude Code](https://x.com/affaanmustafa/status/2014040193557471352) 출처.
 - [Claude Code 공식 문서](https://code.claude.com/docs/en/)
 
 ## 기여

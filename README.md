@@ -15,7 +15,7 @@ A Claude Code configuration optimized for Pro Plan constraints.
 
 > [!TIP]
 > **🚀 3-Second Summary: Why use this?**
-> 1.  **Batch + Cheap Model:** `/do` sends ONE message to **Haiku (1/5 Opus cost)** — plan+build+verify in a single response.
+> 1.  **Batch + Cheap Model:** `/do` sends ONE message to **Haiku 4.5 (1/5 Opus 4.6 cost)** — plan+build+verify in a single response.
 > 2.  **Output Tax Awareness:** Agent response budgets + CLI filtering cut output tokens (which cost **5x** input).
 > 3.  **Zero-Cost Safety:** **11 local hooks** + **atomic rollback** — all enforcement happens locally, zero API cost.
 
@@ -70,21 +70,21 @@ If you skipped Perplexity setup during installation, you can set it up manually:
 
 ### 🤖 Agent Workflow
 
-CPMM automatically moves between Sonnet (Design) and Haiku (Implementation) based on task complexity to achieve optimal efficiency.
+CPMM automatically moves between Sonnet 4.5 (Design) and Haiku 4.5 (Implementation) based on task complexity to achieve optimal efficiency.
 
 ```mermaid
 flowchart LR
     Start([User Request]) --> Cmd{Command?}
 
-    Cmd -->|/plan| Plan[/"@planner (Sonnet)"/]
+    Cmd -->|/plan| Plan[/"@planner (Sonnet 4.5)"/]
     Cmd -->|/do| Snap["📸 git stash push"]
 
-    Snap --> Build[/"@builder (Haiku)"/]
+    Snap --> Build[/"@builder (Haiku 4.5)"/]
     Plan -->|Blueprint| Build
     Build -- "Success" --> Drop["🗑️ git stash drop"]
-    Drop --> Review[/"@reviewer (Haiku)"/]
+    Drop --> Review[/"@reviewer (Haiku 4.5)"/]
     Build -- "Failure (2x)" --> Pop["⏪ git stash pop"]
-    Pop --> Escalate("🚨 Escalate to Sonnet")
+    Pop --> Escalate("🚨 Escalate to Sonnet 4.5")
 
     Review --> Done([Done])
     Escalate -.-> Review
@@ -112,9 +112,9 @@ Essential commands used most frequently.
 
 | Command | Description | Recommended Situation |
 | --- | --- | --- |
-| `/do [task]` | Rapid implementation with **Haiku** | Simple bug fixes, script writing |
-| `/plan [task]` | **Sonnet** Design → **Haiku** Implementation | Feature additions, refactoring, complex logic |
-| `/review [target]` | **Haiku** (Read-only) | Code review (Specify file or directory) |
+| `/do [task]` | Rapid implementation with **Haiku 4.5** | Simple bug fixes, script writing |
+| `/plan [task]` | **Sonnet 4.5** Design → **Haiku 4.5** Implementation | Feature additions, refactoring, complex logic |
+| `/review [target]` | **Haiku 4.5** (Read-only) | Code review (Specify file or directory) |
 
 <details>
 <summary><strong>🚀 Advanced Commands - Click to Expand</strong></summary>
@@ -124,9 +124,9 @@ Full command list for more sophisticated tasks or session management.
 | Command | Description | Recommended Situation |
 | :--- | :--- | :--- |
 | **🧠 Deep Execution** | | |
-| `/dplan [task]` | **Sonnet** + Perplexity, Sequential Thinking, Context7 | Library comparison, latest tech research (Deep Research) |
-| `/do-sonnet` | Execute directly with **Sonnet** | Manual escalation when Haiku keeps failing |
-| `/do-opus` | Execute directly with **Opus** | Resolving extremely complex problems (Cost caution) |
+| `/dplan [task]` | **Sonnet 4.5** + Perplexity, Sequential Thinking, Context7 | Library comparison, latest tech research (Deep Research) |
+| `/do-sonnet` | Execute directly with **Sonnet 4.5** | Manual escalation when Haiku 4.5 keeps failing |
+| `/do-opus` | Execute directly with **Opus 4.6** | Resolving extremely complex problems (Cost caution) |
 | **💾 Session/Context** | | |
 | `/session-save` | Summarize and save session | When pausing work (Auto-removal of secrets) |
 | `/session-load` | Load session | Resuming previous work |
@@ -144,6 +144,9 @@ Full command list for more sophisticated tasks or session management.
 
 ## Core Strategy
 
+> [!NOTE]
+> Anthropic's exact Quota algorithm is private. This configuration optimizes based on **API pricing and verified cost factors**; actual results may vary depending on task complexity.
+
 Claude Pro Plan has constraints that fundamentally change how you should use Claude Code:
 
 - **5-Hour Rolling Reset**: Usage resets every 5 hours, encouraging short and focused sessions.
@@ -156,9 +159,9 @@ CPMM solves each of these:
 
 | Pro Plan Challenge | CPMM Solution |
 |---|---|
-| Opus burns quota on simple tasks | **Haiku default** (1/5 the cost) — escalate only when needed |
+| Opus 4.6 burns quota on simple tasks | **Haiku 4.5 default** (1/5 the cost) — escalate only when needed |
 | Output costs 5x input tokens | **Agent response budgets** (builder: 5 lines, reviewer: 1 line PASS) |
-| Multi-step pipelines waste messages | **Batch `/do`** — plan+build+verify in ONE message (2 msg vs 6+) |
+| Multi-step pipelines waste messages | **Batch `/do`** — plan+build+verify in ONE response (user sends 1 msg, gets 1 response vs 6+ round-trips) |
 | Context grows → each message costs more | **3-tier compact warnings** (25/50/75) + auto-compact at 75% |
 | Failed execution leaves dirty state | **Atomic rollback** (`git stash` snapshot → clean restore on failure) |
 | Hooks/scripts consume API calls | **11 local hooks** — all enforcement runs locally at zero API cost |
@@ -169,12 +172,14 @@ CPMM solves each of these:
 This configuration is designed to extend productive work time by reducing Quota consumption per task. The goal is not "limit bypass," but **resource efficiency optimization** to work longer without exhausting the allocation.
 
 ### 2. Approach
-While Anthropic hasn't disclosed the exact algorithm, Quota consumption is affected by the following factors. This project optimizes all of them through one principle: **Maximum Value Per Message.**
+While Anthropic hasn't disclosed the exact algorithm, Quota consumption is affected by the following factors. This project optimizes all of them through one principle:
 
-* **Model Cost (Primary — 5x):** Haiku costs 1/5 of Opus (API pricing). Use the cheapest model that can do the job.
+> **Maximum Value Per Message**
+
+* **Model Cost (Primary — 5x):** Haiku 4.5 costs 1/5 of Opus 4.6 ($1 vs $5 /MTok input). Use the cheapest model that can do the job.
 * **Output Tokens (High Impact — 5x):** Output costs 5x Input (API pricing). Strict response budgets on every agent.
 * **Message Count (Direct):** Fewer messages = less quota. Batch operations (plan+build+verify) in a single `/do` call.
-* **CLI Filtering:** `jq`, `mgrep` reduce tool output tokens, shrinking both input and output.
+* **CLI Filtering:** `mgrep` reduces tool output by ~50% ([benchmark verified](https://x.com/affaanmustafa/status/2014040193557471352)). `jq` minimizes unnecessary fields from structured output.
 
 ### 3. Execution Strategy: Value-First Workflow
 
@@ -189,13 +194,13 @@ While Anthropic hasn't disclosed the exact algorithm, Quota consumption is affec
     * Use when the planning step itself requires validation before building.
 
 3.  **Cost Minimization per Task**
-    * `@builder` (Haiku): Handles implementation (1/5 cost of Opus).
-    * `@planner` (Sonnet): Architecture design (balanced capability and cost).
-    * **Opus**: Escalation only — explicit `/do-opus` makes cost visible.
+    * `@builder` (Haiku 4.5): Handles implementation ($1/MTok — 1/5 of Opus 4.6).
+    * `@planner` (Sonnet 4.5): Architecture design ($3/MTok — balanced capability and cost).
+    * **Opus 4.6**: Escalation only ($5/MTok) — explicit `/do-opus` makes cost visible.
 
 4.  **Safe Escalation Path (Safety Ladder)**
-    * Haiku failure (after 2 retries) → Escalate to Sonnet (`/do-sonnet`).
-    * Sonnet failure → Escalate to Opus (`/do-opus`).
+    * Haiku 4.5 failure (after 2 retries) → Escalate to Sonnet 4.5 (`/do-sonnet`).
+    * Sonnet 4.5 failure → Escalate to Opus 4.6 (`/do-opus`).
     * Makes cost apparent through explicit model selection.
 
 5.  **Atomic Rollback (Failure Recovery)**
@@ -209,43 +214,18 @@ While Anthropic hasn't disclosed the exact algorithm, Quota consumption is affec
 ## 📊 Results and Comparison
 
 **What this configuration enables:**
-✅ Significantly longer sessions through model cost optimization (Haiku = 1/5 Opus).
-✅ Fewer messages per task through batch execution (`/do`).
-✅ Reduced output tokens through strict agent response budgets.
 
-> [!NOTE]
-> **Note:** Anthropic's exact Quota algorithm is private. This configuration optimizes based on API pricing and verified cost factors; actual results may vary depending on task complexity.
-
-### Cost Comparison: Batch vs Sequential
-
-> The real savings come from **sending fewer, cheaper messages**, not from execution order.
-
-```mermaid
-flowchart LR
-    subgraph "🟢 Batch (/do) — 2 messages"
-        U1[User: /do task] --> C1[Claude: plan+build+verify]
-        C1 -.- R1[Total: 2 msg]
-    end
-
-    subgraph "🔴 Sequential Pipeline — 6+ messages"
-        U2[User: /plan] --> P[Planner output]
-        P --> U3[User: confirms]
-        U3 --> B[Builder output]
-        B --> U4[User: /review]
-        U4 --> RV[Reviewer output]
-        RV -.- R2[Total: 6+ msg]
-    end
-
-    style R1 fill:#c8e6c9,stroke:#2e7d32
-    style R2 fill:#ffcdd2,stroke:#b71c1c
-```
+- ✅ Significantly longer sessions through model cost optimization (Haiku 4.5 = 1/5 Opus 4.6).
+- ✅ Fewer messages per task through batch execution (`/do`).
+- ✅ Reduced output tokens through strict agent response budgets.
 
 | Factor | Measured Impact | Mechanism |
 |--------|----------------|-----------|
-| **Model Selection** | **5x cost reduction** | Haiku ($1/MTok) vs Opus ($5/MTok) — API pricing |
+| **Model Selection** | **5x cost reduction** | Haiku 4.5 ($1/MTok) vs Opus 4.6 ($5/MTok) — API pricing |
 | **Output Budget** | **~60% output reduction** | Agent response limits (builder: 5 lines, reviewer: 1 line PASS) |
 | **Batch Execution** | **~3x fewer messages** | `/do` = 2 msg vs sequential pipeline = 6+ msg |
-| **CLI Filtering** | **~50% tool output reduction** | `jq`, `mgrep` reduces input tokens from tool results |
+| **CLI Filtering (mgrep)** | **~50% tool output reduction** | Benchmark: $0.49 → $0.23 per task ([verified](https://x.com/affaanmustafa/status/2014040193557471352)) |
+| **CLI Filtering (jq)** | **Reduces unnecessary output** | JSON field selection on structured data (estimated) |
 | **Atomic Rollback** | **2-4 msg saved per failure** | `git stash` snapshot before `/do` — clean state on failure, zero API cost |
 
 ---
@@ -263,9 +243,9 @@ Total_Quota ≈ Σ f(model_weight_i, context_size_i, output_size_i)
 
 | Variable | CPMM Mechanism | Reduction |
 |----------|---------------|-----------|
-| `model_weight` | Haiku (0.33x) instead of Opus (1.67x) | **5x** (API pricing) |
+| `model_weight` | Haiku 4.5 ($1/MTok) instead of Opus 4.6 ($5/MTok) | **5x** (API pricing ratio 1:5) |
 | `output_size` | Agent response budgets (builder: 5 lines, reviewer: 1 line) | **~60%** (estimated) |
-| `context_size` | CLI filtering (`jq`, `mgrep`) + auto-compact at 75% | **~50%** tool output (estimated) |
+| `context_size` | `mgrep` ~50% output reduction ([verified](https://x.com/affaanmustafa/status/2014040193557471352)) + `jq` field selection (estimated) + auto-compact at 75% | **~50%** mgrep verified |
 
 **Known limitation**: Context grows within a session as messages accumulate, making each successive message more expensive. Mitigated by 3-tier compact warnings (25/50/75 tool calls) and auto-compact at 75% context.
 
@@ -302,10 +282,11 @@ Let **p** = probability that a `/do` (batch) execution fails and requires escala
 
 | Factor | Impact | Evidence | Status |
 |--------|--------|----------|:------:|
-| Model Selection | **5x** cost reduction | API pricing: Haiku $1 vs Opus $5 /MTok | Verified |
+| Model Selection | **5x** cost reduction | API pricing: Haiku 4.5 $1 vs Opus 4.6 $5 /MTok input | Verified |
 | Output Tax | **5x** cost multiplier | API pricing: Output = 5× Input | Verified |
 | Batch Execution | **~3x** fewer messages | `/do` = 2 msg vs `/plan` = 6+ msg | Measured |
-| CLI Filtering | **~50%** tool output reduction | `jq`, `mgrep` field selection | Estimated |
+| CLI Filtering (mgrep) | **~50%** tool output reduction | Benchmark: $0.49 → $0.23 per task | Verified |
+| CLI Filtering (jq) | Reduces unnecessary output | JSON field selection on structured data | Estimated |
 | Atomic Rollback | **2-4 msg** saved per failure | `git stash` prevents dirty state | Estimated |
 
 > **Overall Efficiency: 5-8x** (driven by model selection 5x, amplified by output reduction and message batching. Rollback prevents waste but does not change the multiplier.)
@@ -351,10 +332,10 @@ claude-pro-minmax
 │   ├── settings.json           # Project Settings (Permissions, hooks, env vars)
 │   ├── settings.local.json     # Local user settings (Excluded from Git)
 │   ├── agents/                 # Agent Definitions
-│   │   ├── planner.md          # Sonnet: Architecture and design decisions
-│   │   ├── dplanner.md         # Sonnet+MCP: Deep planning utilizing external tools
-│   │   ├── builder.md          # Haiku: Code implementation and refactoring
-│   │   └── reviewer.md         # Haiku: Read-only code review
+│   │   ├── planner.md          # Sonnet 4.5: Architecture and design decisions
+│   │   ├── dplanner.md         # Sonnet 4.5+MCP: Deep planning utilizing external tools
+│   │   ├── builder.md          # Haiku 4.5: Code implementation and refactoring
+│   │   └── reviewer.md         # Haiku 4.5: Read-only code review
 │   ├── commands/               # Slash Commands
 │   │   ├── plan.md             # Architecture planning (Sonnet -> Haiku)
 │   │   ├── dplan.md            # Deep research planning (Sequential Thinking)
@@ -443,7 +424,7 @@ To add a new runtime, copy and implement `scripts/runtime/adapters/_template.sh`
 <summary><strong>Q: How does this configuration optimize the Pro Plan quota?</strong></summary>
 
 A: Anthropic's exact quota algorithm is not public. Optimization is based on three pillars:
-- **Model Cost** (verified): Haiku is 1/5 the price of Opus per API pricing.
+- **Model Cost** (verified): Haiku 4.5 is 1/5 the price of Opus 4.6 per API pricing ($1 vs $5 /MTok input).
 - **Output Reduction** (verified): Output tokens cost 5x input. Agent response budgets + CLI filtering reduce output.
 - **Message Efficiency**: `/do` batches plan+build+verify into a single response (2 messages vs 6+ in sequential pipeline).
 
@@ -487,7 +468,7 @@ A: macOS and Linux are supported. Windows is available through WSL.
 <details>
 <summary><strong>Q: Why not use Opus for all tasks?</strong></summary>
 
-A: API pricing (reflecting compute cost), Opus is much more expensive than Sonnet or Haiku. While the exact Pro Plan quota impact is not public, using Opus for all tasks would deplete the quota much faster. Explicit model selection (`/do-opus`) is used to ensure awareness when using expensive models.
+A: API pricing (reflecting compute cost), Opus 4.6 ($5/MTok input) is much more expensive than Sonnet 4.5 ($3/MTok) or Haiku 4.5 ($1/MTok). While the exact Pro Plan quota impact is not public, using Opus 4.6 for all tasks would deplete the quota much faster. Explicit model selection (`/do-opus`) is used to ensure awareness when using expensive models.
 </details>
 
 <details>
@@ -504,6 +485,7 @@ A: CPMM uses **Atomic Rollback**. Before `/do` executes, `git stash push` saves 
 ## Credits
 
 - **[affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)** — Anthropic hackathon winner. The foundation of this project.
+- **[@affaanmustafa](https://x.com/affaanmustafa)** — mgrep benchmark data ($0.49 → $0.23, ~50% savings) from [Longform Guide to Everything Claude Code](https://x.com/affaanmustafa/status/2014040193557471352).
 - [Claude Code Official Documentation](https://code.claude.com/docs/en/)
 
 ## Contributing
