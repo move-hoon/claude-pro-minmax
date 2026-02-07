@@ -15,9 +15,9 @@ A Claude Code configuration optimized for Pro Plan constraints.
 
 > [!TIP]
 > **🚀 3-Second Summary: Why use this?**
-> 1.  **Model Cost Control:** Uses **Haiku (1/5 cost)** for implementation, **Sonnet** for design — not expensive Opus.
+> 1.  **Batch + Cheap Model:** `/do` sends ONE message to **Haiku (1/5 Opus cost)** — plan+build+verify in a single response.
 > 2.  **Output Tax Awareness:** Agent response budgets + CLI filtering cut output tokens (which cost **5x** input).
-> 3.  **Zero-Cost Automation:** **11 local hooks** that enforce safety without using the API.
+> 3.  **Zero-Cost Safety:** **11 local hooks** + **atomic rollback** — all enforcement happens locally, zero API cost.
 
 ---
 
@@ -66,7 +66,83 @@ If you skipped Perplexity setup during installation, you can set it up manually:
 
 ---
 
-## Problem Definition
+## 🚀 Quick Start
+
+### 🤖 Agent Workflow
+
+CPMM automatically moves between Sonnet (Design) and Haiku (Implementation) based on task complexity to achieve optimal efficiency.
+
+```mermaid
+flowchart LR
+    Start([User Request]) --> Cmd{Command?}
+
+    Cmd -->|/plan| Plan[/"@planner (Sonnet)"/]
+    Cmd -->|/do| Snap["📸 git stash push"]
+
+    Snap --> Build[/"@builder (Haiku)"/]
+    Plan -->|Blueprint| Build
+    Build -- "Success" --> Drop["🗑️ git stash drop"]
+    Drop --> Review[/"@reviewer (Haiku)"/]
+    Build -- "Failure (2x)" --> Pop["⏪ git stash pop"]
+    Pop --> Escalate("🚨 Escalate to Sonnet")
+
+    Review --> Done([Done])
+    Escalate -.-> Review
+
+    classDef planner fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px;
+    classDef builder fill:#bbdefb,stroke:#1565c0,stroke-width:2px;
+    classDef reviewer fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px;
+    classDef escalate fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px;
+    classDef done fill:#e0e0e0,stroke:#9e9e9e,stroke-width:2px,font-weight:bold;
+    classDef snapshot fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px;
+
+    class Plan planner;
+    class Build builder;
+    class Review reviewer;
+    class Escalate escalate;
+    class Done done;
+    class Snap,Drop,Pop snapshot;
+```
+
+### ⌨️ Command Guide
+
+**1. Core Commands**
+
+Essential commands used most frequently.
+
+| Command | Description | Recommended Situation |
+| --- | --- | --- |
+| `/do [task]` | Rapid implementation with **Haiku** | Simple bug fixes, script writing |
+| `/plan [task]` | **Sonnet** Design → **Haiku** Implementation | Feature additions, refactoring, complex logic |
+| `/review [target]` | **Haiku** (Read-only) | Code review (Specify file or directory) |
+
+<details>
+<summary><strong>🚀 Advanced Commands - Click to Expand</strong></summary>
+
+Full command list for more sophisticated tasks or session management.
+
+| Command | Description | Recommended Situation |
+| :--- | :--- | :--- |
+| **🧠 Deep Execution** | | |
+| `/dplan [task]` | **Sonnet** + Perplexity, Sequential Thinking, Context7 | Library comparison, latest tech research (Deep Research) |
+| `/do-sonnet` | Execute directly with **Sonnet** | Manual escalation when Haiku keeps failing |
+| `/do-opus` | Execute directly with **Opus** | Resolving extremely complex problems (Cost caution) |
+| **💾 Session/Context** | | |
+| `/session-save` | Summarize and save session | When pausing work (Auto-removal of secrets) |
+| `/session-load` | Load session | Resuming previous work |
+| `/compact-phase` | Step-by-step context compaction | When context cleanup is needed mid-session |
+| `/load-context` | Load context templates | Initial setup for frontend/backend |
+| **🛠️ Utility** | | |
+| `/learn` | Learn and save patterns | Registering frequently recurring errors or preferred styles |
+| `/analyze-failures`| Analyze error logs | Identifying causes of recurring errors |
+| `/watch` | Process monitoring (tmux) | Observing long-running builds/tests |
+| `/llms-txt` | Fetch documentation | Loading official library docs in LLM format |
+
+</details>
+
+---
+
+## Core Strategy
 
 Claude Pro Plan has constraints that fundamentally change how you should use Claude Code:
 
@@ -74,13 +150,18 @@ Claude Pro Plan has constraints that fundamentally change how you should use Cla
 - **Message-Based Quota (Length-Sensitive)**: As the conversation gets longer (as context accumulates), the quota deducted per message increases exponentially. ([Claude Help Center](https://support.anthropic.com/en/articles/8325606-what-is-claude-pro))
 - **Weekly Limits**: Additional weekly caps are applied to heavy users.
 
-The original [everything-claude-code](https://github.com/affaan-m/everything-claude-code) is a powerful tool optimized for the near-unlimited **Max Plan** environment. However, using it unmodified on the **Pro Plan** wastes quota — expensive models (Opus) for simple tasks, verbose agent outputs, and unnecessary message round-trips all burn through your 5-hour budget.
+Without optimization, default Claude Code usage on the Pro Plan burns through quota fast — expensive models for simple tasks, verbose outputs, and unnecessary message round-trips all drain your 5-hour budget.
 
-This project maintains powerful features while redesigning the architecture to fit Pro Plan constraints.
+CPMM solves each of these:
 
----
-
-## Core Strategy
+| Pro Plan Challenge | CPMM Solution |
+|---|---|
+| Opus burns quota on simple tasks | **Haiku default** (1/5 the cost) — escalate only when needed |
+| Output costs 5x input tokens | **Agent response budgets** (builder: 5 lines, reviewer: 1 line PASS) |
+| Multi-step pipelines waste messages | **Batch `/do`** — plan+build+verify in ONE message (2 msg vs 6+) |
+| Context grows → each message costs more | **3-tier compact warnings** (25/50/75) + auto-compact at 75% |
+| Failed execution leaves dirty state | **Atomic rollback** (`git stash` snapshot → clean restore on failure) |
+| Hooks/scripts consume API calls | **11 local hooks** — all enforcement runs locally at zero API cost |
 
 ### 1. Goal
 **Maximize session sustainability within Pro Plan's 5-hour Quota window.**
@@ -116,6 +197,12 @@ While Anthropic hasn't disclosed the exact algorithm, Quota consumption is affec
     * Haiku failure (after 2 retries) → Escalate to Sonnet (`/do-sonnet`).
     * Sonnet failure → Escalate to Opus (`/do-opus`).
     * Makes cost apparent through explicit model selection.
+
+5.  **Atomic Rollback (Failure Recovery)**
+    * `/do`, `/do-sonnet`, `/do-opus` create a `git stash` snapshot before execution.
+    * On success: snapshot is dropped (zero overhead).
+    * On failure (after 2 retries): `git stash pop` restores pre-execution state.
+    * **Benefit**: Clean state for immediate escalation — no manual cleanup, saving **2-4 messages per failure**.
 
 ---
 
@@ -159,77 +246,69 @@ flowchart LR
 | **Output Budget** | **~60% output reduction** | Agent response limits (builder: 5 lines, reviewer: 1 line PASS) |
 | **Batch Execution** | **~3x fewer messages** | `/do` = 2 msg vs sequential pipeline = 6+ msg |
 | **CLI Filtering** | **~50% tool output reduction** | `jq`, `mgrep` reduces input tokens from tool results |
+| **Atomic Rollback** | **2-4 msg saved per failure** | `git stash` snapshot before `/do` — clean state on failure, zero API cost |
 
 ---
 
+<details>
+<summary><strong>🔬 Architecture Analysis — Mathematical Basis for Design Decisions</strong></summary>
 
+### Core Philosophy Validation
 
-## 🚀 Quick Start
+CPMM's "Maximum Value Per Message" directly minimizes the Pro Plan quota cost function:
 
-### 🤖 Agent Workflow
-
-CPMM automatically moves between Sonnet (Design) and Haiku (Implementation) based on task complexity to achieve optimal efficiency.
-
-```mermaid
-flowchart LR
-    Start([User Request]) --> Cmd{Command?}
-    
-    Cmd -->|/plan| Plan[/"@planner (Sonnet)"/]
-    Cmd -->|/do| Build[/"@builder (Haiku)"/]
-    
-    Plan -->|Blueprint| Build
-    Build -- "Success" --> Review[/"@reviewer (Haiku)"/]
-    Build -- "Failure (2x)" --> Escalate("🚨 Escalate to Sonnet")
-    
-    Review --> Done([Done])
-    Escalate -.-> Review
-
-    classDef planner fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px;
-    classDef builder fill:#bbdefb,stroke:#1565c0,stroke-width:2px;
-    classDef reviewer fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px;
-    classDef escalate fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px;
-    classDef done fill:#e0e0e0,stroke:#9e9e9e,stroke-width:2px,font-weight:bold;
-
-    class Plan planner;
-    class Build builder;
-    class Review reviewer;
-    class Escalate escalate;
-    class Done done;
+```
+Total_Quota ≈ Σ f(model_weight_i, context_size_i, output_size_i)
 ```
 
-### ⌨️ Command Guide
+| Variable | CPMM Mechanism | Reduction |
+|----------|---------------|-----------|
+| `model_weight` | Haiku (0.33x) instead of Opus (1.67x) | **5x** (API pricing) |
+| `output_size` | Agent response budgets (builder: 5 lines, reviewer: 1 line) | **~60%** (estimated) |
+| `context_size` | CLI filtering (`jq`, `mgrep`) + auto-compact at 75% | **~50%** tool output (estimated) |
 
-**1. Core Commands**
+**Known limitation**: Context grows within a session as messages accumulate, making each successive message more expensive. Mitigated by 3-tier compact warnings (25/50/75 tool calls) and auto-compact at 75% context.
 
-Essential commands used most frequently.
+### Hybrid Strategy: Why Batch Default + Sequential Fallback
 
-| Command | Description | Recommended Situation |
-| --- | --- | --- |
-| `/do [task]` | Rapid implementation with **Haiku** | Simple bug fixes, script writing |
-| `/plan [task]` | **Sonnet** Design → **Haiku** Implementation | Feature additions, refactoring, complex logic |
-| `/review [target]` | **Haiku** (Read-only) | Code review (Specify file or directory) |
+Let **p** = probability that a `/do` (batch) execution fails and requires escalation to `/plan` (sequential).
 
-<details>
-<summary><strong>🚀 Advanced Commands - Click to Expand</strong></summary>
+| Strategy | Formula | Messages per 100 Tasks |
+|----------|---------|----------------------|
+| Always `/plan` (sequential) | 6 × 100 | **600** |
+| Hybrid (`/do` default) | 2×(1−p)×100 + (4+6)×p×100 | **200 + 800p** |
 
-Full command list for more sophisticated tasks or session management.
+**Break-even**: 200 + 800p = 600 → **p = 0.50 (50%)**
 
-| Command | Description | Recommended Situation |
-| :--- | :--- | :--- |
-| **🧠 Deep Execution** | | |
-| `/dplan [task]` | **Sonnet** + Perplexity, Sequential Thinking, Context7 | Library comparison, latest tech research (Deep Research) |
-| `/do-sonnet` | Execute directly with **Sonnet** | Manual escalation when Haiku keeps failing |
-| `/do-opus` | Execute directly with **Opus** | Resolving extremely complex problems (Cost caution) |
-| **💾 Session/Context** | | |
-| `/session-save` | Summarize and save session | When pausing work (Auto-removal of secrets) |
-| `/session-load` | Load session | Resuming previous work |
-| `/compact-phase` | Step-by-step context compaction | When context cleanup is needed mid-session |
-| `/load-context` | Load context templates | Initial setup for frontend/backend |
-| **🛠️ Utility** | | |
-| `/learn` | Learn and save patterns | Registering frequently recurring errors or preferred styles |
-| `/analyze-failures`| Analyze error logs | Identifying causes of recurring errors |
-| `/watch` | Process monitoring (tmux) | Observing long-running builds/tests |
-| `/llms-txt` | Fetch documentation | Loading official library docs in LLM format |
+| Failure Rate (p) | Hybrid Cost | Sequential Cost | Savings |
+|:-:|:-:|:-:|:-:|
+| 10% | 280 msg | 600 msg | **53%** |
+| 20% | 360 msg | 600 msg | **40%** |
+| 30% | 440 msg | 600 msg | **27%** |
+| 40% | 520 msg | 600 msg | **13%** |
+| 50% | 600 msg | 600 msg | 0% (break-even) |
+
+**Conclusion**: Hybrid outperforms always-sequential for any realistic failure rate below 50%.
+
+### Atomic Rollback Cost-Benefit
+
+| Scenario | Without Rollback | With Rollback | Saved |
+|----------|:-:|:-:|:-:|
+| `/do` success | 2 msg | 2 msg | 0 |
+| `/do` failure (2 retries) | 4 msg + 2-4 msg cleanup | 4 msg (auto-restore) | **2-4 msg** |
+| API cost of rollback | — | 0 (`git stash` is local) | **0** |
+
+### Optimization Factor Summary
+
+| Factor | Impact | Evidence | Status |
+|--------|--------|----------|:------:|
+| Model Selection | **5x** cost reduction | API pricing: Haiku $1 vs Opus $5 /MTok | Verified |
+| Output Tax | **5x** cost multiplier | API pricing: Output = 5× Input | Verified |
+| Batch Execution | **~3x** fewer messages | `/do` = 2 msg vs `/plan` = 6+ msg | Measured |
+| CLI Filtering | **~50%** tool output reduction | `jq`, `mgrep` field selection | Estimated |
+| Atomic Rollback | **2-4 msg** saved per failure | `git stash` prevents dirty state | Estimated |
+
+> **Overall Efficiency: 5-8x** (driven by model selection 5x, amplified by output reduction and message batching. Rollback prevents waste but does not change the multiplier.)
 
 </details>
 
@@ -311,13 +390,14 @@ claude-pro-minmax
 │   ├── lint.sh                 # General-purpose lint script
 │   ├── commit.sh               # Standardized git commit helper
 │   ├── create-branch.sh        # Branch creation helper
+│   ├── snapshot.sh             # Atomic rollback for /do commands (git stash)
 │   ├── analyze-failures.sh     # Log analysis tool for /analyze-failures
 │   ├── scrub-secrets.js        # Logic to remove secrets when saving sessions
 │   ├── hooks/                  # Zero-Cost Hooks (Automated checks)
 │   │   ├── critical-action-check.sh # Pre-block dangerous commands
 │   │   ├── tool-failure-log.sh      # Record failure log files
 │   │   ├── pre-compact.sh           # Compaction pre-processor
-│   │   ├── compact-suggest.sh       # Propose compaction when threshold is reached
+│   │   ├── compact-suggest.sh       # 3-tier compact warnings (25/50/75)
 │   │   ├── post-edit-format.sh      # Automatic formatting after editing
 │   │   ├── readonly-check.sh        # Enforce read-only for reviewer
 │   │   ├── retry-check.sh           # Enforce 2-retry limit for builder
@@ -408,6 +488,15 @@ A: macOS and Linux are supported. Windows is available through WSL.
 <summary><strong>Q: Why not use Opus for all tasks?</strong></summary>
 
 A: API pricing (reflecting compute cost), Opus is much more expensive than Sonnet or Haiku. While the exact Pro Plan quota impact is not public, using Opus for all tasks would deplete the quota much faster. Explicit model selection (`/do-opus`) is used to ensure awareness when using expensive models.
+</details>
+
+<details>
+<summary><strong>Q: What happens when /do fails mid-execution?</strong></summary>
+
+A: CPMM uses **Atomic Rollback**. Before `/do` executes, `git stash push` saves a snapshot. If execution fails after 2 retries, `git stash pop` restores the working tree to its pre-execution state. This prevents dirty state and saves 2-4 messages that would otherwise be spent on manual cleanup.
+
+- Cost: Zero (git stash is a local operation)
+- Limitation: Only tracks existing (tracked) files. Newly created files require manual removal.
 </details>
 
 ---

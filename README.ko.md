@@ -10,13 +10,14 @@
 > **토큰은 Minimum, 지능은 Maximum. Quota의 한계를 뛰어넘으세요.**
 
 Pro Plan 제약에 최적화된 Claude Code 설정입니다.
+
 ---
 
 > [!TIP]
 > **🚀 3초 요약: 왜 이걸 써야 하나요?**
-> 1.  **모델 비용 제어:** 비싼 Opus 대신 **Haiku(1/5 비용)** 로 구현, **Sonnet**으로 설계합니다.
+> 1.  **배치 + 저비용 모델:** `/do` 하나로 **Haiku(Opus의 1/5 비용)** 에게 plan+build+verify를 한 번에 처리시킵니다.
 > 2.  **출력 비용 인식:** 에이전트 응답 예산 + CLI 필터링으로 **Input 대비 5배 비싼** Output 토큰을 절감합니다.
-> 3.  **무비용 자동화:** API를 쓰지 않는 **11개의 로컬 Hook**으로 안전장치를 제공합니다.
+> 3.  **무비용 안전장치:** **11개 로컬 Hook** + **원자적 롤백** — API 토큰 소비 없이 모든 안전장치가 동작합니다.
 
 ---
 
@@ -65,21 +66,102 @@ Perplexity를 설치 시 건너뛰었다면 나중에 수동으로 설정할 수
 
 ---
 
-## 문제 정의
+## 🚀 빠른 시작 (Quick Start)
 
-Claude Pro Plan에는 Claude Code 사용 방식을 근본적으로 바꾸는 제약이 있습니다:
+### 🤖 에이전트 워크플로우
 
-- **5시간 Rolling 리셋**: 5시간마다 사용량이 리셋되어 짧고 집중된 세션을 권장합니다
-- **메시지 기반 Quota (길이 민감)**: 대화가 길어질수록(Context가 쌓일수록) 메시지 하나당 차감되는 할당량이 기하급수적으로 늘어납니다. ([Claude Help Center](https://support.anthropic.com/en/articles/8325606-what-is-claude-pro))
-- **주간 제한**: 과다 사용자에게 추가 주간 cap이 적용됩니다
+CPMM은 작업의 복잡도에 따라 Sonnet(설계)과 Haiku(구현)를 자동으로 오가며 최적의 효율을 냅니다.
 
-원본 [everything-claude-code](https://github.com/affaan-m/everything-claude-code)는 사실상 무제한에 가까운 **Max Plan** 환경에 최적화된 강력한 도구입니다. 하지만 수정 없이 **Pro Plan**에서 사용하면 quota를 낭비하게 됩니다 — 단순 작업에 비싼 모델(Opus) 사용, 장황한 에이전트 출력, 불필요한 메시지 왕복이 5시간 예산을 빠르게 소진합니다.
+```mermaid
+flowchart LR
+    Start([User Request]) --> Cmd{Command?}
 
-이 프로젝트는 강력한 기능은 유지하면서 Pro Plan 제약에 맞게 아키텍처를 재설계했습니다.
+    Cmd -->|/plan| Plan[/"@planner (Sonnet)"/]
+    Cmd -->|/do| Snap["📸 git stash push"]
+
+    Snap --> Build[/"@builder (Haiku)"/]
+    Plan -->|Blueprint| Build
+    Build -- "Success" --> Drop["🗑️ git stash drop"]
+    Drop --> Review[/"@reviewer (Haiku)"/]
+    Build -- "Failure (2x)" --> Pop["⏪ git stash pop"]
+    Pop --> Escalate("🚨 Escalate to Sonnet")
+
+    Review --> Done([Done])
+    Escalate -.-> Review
+
+    classDef planner fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px;
+    classDef builder fill:#bbdefb,stroke:#1565c0,stroke-width:2px;
+    classDef reviewer fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px;
+    classDef escalate fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px;
+    classDef done fill:#e0e0e0,stroke:#9e9e9e,stroke-width:2px,font-weight:bold;
+    classDef snapshot fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px;
+
+    class Plan planner;
+    class Build builder;
+    class Review reviewer;
+    class Escalate escalate;
+    class Done done;
+    class Snap,Drop,Pop snapshot;
+```
+
+### ⌨️ 명령어 가이드
+
+**1. 핵심 명령어 (Core Commands)**
+
+가장 자주 사용하는 필수 명령어입니다.
+
+| 명령어 | 설명 | 추천 상황 |
+| --- | --- | --- |
+| `/do [작업]` | **Haiku**로 빠르게 구현 | 간단한 버그 수정, 스크립트 작성 |
+| `/plan [작업]` | **Sonnet** 설계 → **Haiku** 구현 | 기능 추가, 리팩토링, 복잡한 로직 |
+| `/review [대상]` | **Haiku** (읽기 전용) | 코드 리뷰 (파일 또는 디렉토리 지정 가능) |
+
+<details>
+<summary><strong>🚀 심화 명령어 (Advanced Commands) - Click to Expand</strong></summary>
+
+더 정교한 작업이나 세션 관리를 위한 전체 명령어 목록입니다.
+
+| 명령어 | 설명 | 추천 상황 |
+| :--- | :--- | :--- |
+| **🧠 심층 실행** | | |
+| `/dplan [작업]` | **Sonnet** + Perplexity, Sequential Thinking, Context7 | 라이브러리 비교, 최신 기술 조사 (심층 연구) |
+| `/do-sonnet` | **Sonnet**으로 직접 실행 | Haiku가 계속 실패할 때 수동 격상 |
+| `/do-opus` | **Opus**로 직접 실행 | 매우 복잡한 문제 해결 (비용 주의) |
+| **💾 세션/컨텍스트** | | |
+| `/session-save` | 세션 요약 및 저장 | 작업 중단 시 (시크릿 자동 제거) |
+| `/session-load` | 세션 불러오기 | 이전 작업 재개 |
+| `/compact-phase` | 단계별 컨텍스트 압축 | 세션 중간에 컨텍스트 정리 필요 시 |
+| `/load-context` | 컨텍스트 템플릿 로드 | 프론트/백엔드 초기 설정 시 |
+| **🛠️ 유틸리티** | | |
+| `/learn` | 패턴 학습 및 저장 | 자주 반복되는 오류나 선호 스타일 등록 |
+| `/analyze-failures`| 오류 로그 분석 | 반복되는 에러 원인 파악 |
+| `/watch` | 프로세스 모니터링 (tmux) | 장시간 빌드/테스트 관찰 |
+| `/llms-txt` | 문서 가져오기 | 라이브러리 공식 문서를 LLM 포맷으로 로드 |
+
+</details>
 
 ---
 
 ## 핵심 전략
+
+Claude Pro Plan에는 Claude Code 사용 방식을 근본적으로 바꾸는 제약이 있습니다:
+
+- **5시간 Rolling 리셋**: 5시간마다 사용량이 리셋되어 짧고 집중된 세션을 권장합니다.
+- **메시지 기반 Quota (길이 민감)**: 대화가 길어질수록(Context가 쌓일수록) 메시지 하나당 차감되는 할당량이 기하급수적으로 늘어납니다. ([Claude Help Center](https://support.anthropic.com/en/articles/8325606-what-is-claude-pro))
+- **주간 제한**: 과다 사용자에게 추가 주간 cap이 적용됩니다.
+
+최적화 없이 기본 Claude Code를 Pro Plan에서 사용하면 quota가 빠르게 소진됩니다 — 단순 작업에 비싼 모델, 장황한 출력, 불필요한 메시지 왕복이 5시간 예산을 빠르게 소진합니다.
+
+CPMM은 이 각각을 해결합니다:
+
+| Pro Plan 과제 | CPMM 해법 |
+|---|---|
+| Opus가 단순 작업에도 quota 소모 | **Haiku 기본** (1/5 비용) — 필요할 때만 에스컬레이션 |
+| 출력이 입력의 5배 비용 | **에이전트 응답 예산** (builder: 5줄, reviewer: 1줄 PASS) |
+| 다단계 파이프라인이 메시지 낭비 | **배치 `/do`** — plan+build+verify를 ONE 메시지로 (2 msg vs 6+) |
+| Context 증가 → 메시지당 비용 증가 | **3단계 compact 경고** (25/50/75) + 75% 자동 컴팩션 |
+| 실패 시 dirty state 방치 | **원자적 롤백** (`git stash` 스냅샷 → 실패 시 깨끗한 복원) |
+| Hook/스크립트가 API 호출 소비 | **11개 로컬 Hook** — 모든 강제 실행이 로컬, API 비용 0 |
 
 ### 1. 목표 (Goal)
 **Pro Plan의 5시간 Quota 창 내에서 세션 지속 가능성 최대화**
@@ -115,6 +197,12 @@ Anthropic이 정확한 알고리즘을 공개하지 않았지만, Quota 소비�
     * Haiku 실패 (2회 재시도 후) → Sonnet으로 격상 (`/do-sonnet`).
     * Sonnet 실패 → Opus로 격상 (`/do-opus`).
     * 명시적 모델 선택으로 비용을 인지하게 합니다.
+
+5.  **원자적 롤백 (실패 복구)**
+    * `/do`, `/do-sonnet`, `/do-opus` 실행 전 `git stash` 스냅샷을 생성합니다.
+    * 성공 시: 스냅샷 제거 (오버헤드 없음).
+    * 실패 시 (2회 재시도 후): `git stash pop`으로 실행 전 상태 복원.
+    * **이점**: 즉시 에스컬레이션 가능한 깨끗한 상태 — 수동 정리 불필요, 실패당 **2-4 메시지 절약**.
 
 ---
 
@@ -158,77 +246,69 @@ flowchart LR
 | **출력 예산** | **~60% 출력 감소** | 에이전트 응답 제한 (builder: 5줄, reviewer: 1줄 PASS) |
 | **배치 실행** | **~3배 메시지 감소** | `/do` = 2 msg vs 순차 파이프라인 = 6+ msg |
 | **CLI 필터링** | **~50% 도구 출력 감소** | `jq`, `mgrep`로 도구 결과의 input 토큰 감소 |
+| **원자적 롤백** | **실패당 2-4 msg 절약** | `/do` 전 `git stash` 스냅샷 — 실패 시 깨끗한 상태, API 비용 0 |
 
 ---
 
+<details>
+<summary><strong>🔬 아키텍처 분석 — 설계 결정의 수학적 근거</strong></summary>
 
+### 핵심 철학 검증
 
-## 🚀 빠른 시작 (Quick Start)
+CPMM의 "메시지당 최대 가치"는 Pro Plan quota 비용 함수를 직접 최소화합니다:
 
-### 🤖 에이전트 워크플로우
-
-CPMM은 작업의 복잡도에 따라 Sonnet(설계)과 Haiku(구현)를 자동으로 오가며 최적의 효율을 냅니다.
-
-```mermaid
-flowchart LR
-    Start([User Request]) --> Cmd{Command?}
-    
-    Cmd -->|/plan| Plan[/"@planner (Sonnet)"/]
-    Cmd -->|/do| Build[/"@builder (Haiku)"/]
-    
-    Plan -->|설계도| Build
-    Build -- "성공" --> Review[/"@reviewer (Haiku)"/]
-    Build -- "실패 (2회)" --> Escalate("🚨 Sonnet으로 격상")
-    
-    Review --> Done([완료])
-    Escalate -.-> Review
-
-    classDef planner fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px;
-    classDef builder fill:#bbdefb,stroke:#1565c0,stroke-width:2px;
-    classDef reviewer fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px;
-    classDef escalate fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px;
-    classDef done fill:#e0e0e0,stroke:#9e9e9e,stroke-width:2px,font-weight:bold;
-
-    class Plan planner;
-    class Build builder;
-    class Review reviewer;
-    class Escalate escalate;
-    class Done done;
+```
+Total_Quota ≈ Σ f(model_weight_i, context_size_i, output_size_i)
 ```
 
-### ⌨️ 명령어 가이드
+| 변수 | CPMM 메커니즘 | 감소율 |
+|------|--------------|--------|
+| `model_weight` | Opus(1.67x) 대신 Haiku(0.33x) 사용 | **5배** (API 가격) |
+| `output_size` | 에이전트 응답 예산 (builder: 5줄, reviewer: 1줄) | **~60%** (추정) |
+| `context_size` | CLI 필터링 (`jq`, `mgrep`) + 75% 자동 컴팩션 | **~50%** 도구 출력 (추정) |
 
-**1. 핵심 명령어 (Core Commands)**
+**알려진 제한**: 세션 내 메시지가 쌓이면 context가 증가하여 후반 메시지가 더 비쌈. 3단계 컴팩션 경고 (25/50/75 tool calls) + 75% 자동 컴팩션으로 완화.
 
-가장 자주 사용하는 필수 명령어입니다.
+### 하이브리드 전략: 배치 기본 + 순차 폴백의 수학적 근거
 
-| 명령어 | 설명 | 추천 상황 |
-| --- | --- | --- |
-| `/do [작업]` | **Haiku**로 빠르게 구현 | 간단한 버그 수정, 스크립트 작성 |
-| `/plan [작업]` | **Sonnet** 설계 → **Haiku** 구현 | 기능 추가, 리팩토링, 복잡한 로직 |
-| `/review [대상]` | **Haiku** (읽기 전용) | 코드 리뷰 (파일 또는 디렉토리 지정 가능) |
+**p** = `/do` (배치) 실행 실패 후 `/plan` (순차)로 에스컬레이션할 확률
 
-<details>
-<summary><strong>🚀 심화 명령어 (Advanced Commands) - Click to Expand</strong></summary>
+| 전략 | 공식 | 100개 작업당 메시지 |
+|------|------|-------------------|
+| 항상 `/plan` (순차) | 6 × 100 | **600** |
+| 하이브리드 (`/do` 기본) | 2×(1−p)×100 + (4+6)×p×100 | **200 + 800p** |
 
-더 정교한 작업이나 세션 관리를 위한 전체 명령어 목록입니다.
+**손익분기점**: 200 + 800p = 600 → **p = 0.50 (50%)**
 
-| 명령어 | 설명 | 추천 상황 |
-| :--- | :--- | :--- |
-| **🧠 심층 실행** | | |
-| `/dplan [작업]` | **Sonnet** + Perplexity, Sequential Thinking, Context7 | 라이브러리 비교, 최신 기술 조사 (심층 연구) |
-| `/do-sonnet` | **Sonnet**으로 직접 실행 | Haiku가 계속 실패할 때 수동 격상 |
-| `/do-opus` | **Opus**로 직접 실행 | 매우 복잡한 문제 해결 (비용 주의) |
-| **💾 세션/컨텍스트** | | |
-| `/session-save` | 세션 요약 및 저장 | 작업 중단 시 (시크릿 자동 제거) |
-| `/session-load` | 세션 불러오기 | 이전 작업 재개 |
-| `/compact-phase` | 단계별 컨텍스트 압축 | 세션 중간에 컨텍스트 정리 필요 시 |
-| `/load-context` | 컨텍스트 템플릿 로드 | 프론트/백엔드 초기 설정 시 |
-| **🛠️ 유틸리티** | | |
-| `/learn` | 패턴 학습 및 저장 | 자주 반복되는 오류나 선호 스타일 등록 |
-| `/analyze-failures`| 오류 로그 분석 | 반복되는 에러 원인 파악 |
-| `/watch` | 프로세스 모니터링 (tmux) | 장시간 빌드/테스트 관찰 |
-| `/llms-txt` | 문서 가져오기 | 라이브러리 공식 문서를 LLM 포맷으로 로드 |
+| 실패율 (p) | 하이브리드 비용 | 순차 비용 | 절약률 |
+|:-:|:-:|:-:|:-:|
+| 10% | 280 msg | 600 msg | **53%** |
+| 20% | 360 msg | 600 msg | **40%** |
+| 30% | 440 msg | 600 msg | **27%** |
+| 40% | 520 msg | 600 msg | **13%** |
+| 50% | 600 msg | 600 msg | 0% (손익분기) |
+
+**결론**: 하이브리드 전략은 현실적인 실패율(50% 미만) 모든 구간에서 항상-순차 전략보다 우월합니다.
+
+### 원자적 롤백 비용-편익
+
+| 시나리오 | 롤백 없음 | 롤백 있음 | 절약 |
+|----------|:-:|:-:|:-:|
+| `/do` 성공 | 2 msg | 2 msg | 0 |
+| `/do` 실패 (2회 재시도) | 4 msg + 2-4 msg 정리 | 4 msg (자동 복원) | **2-4 msg** |
+| 롤백 API 비용 | — | 0 (`git stash`는 로컬) | **0** |
+
+### 최적화 요소 종합
+
+| 요소 | 효과 | 근거 | 상태 |
+|------|------|------|:----:|
+| 모델 선택 | **5배** 비용 절감 | API 가격: Haiku $1 vs Opus $5 /MTok | 검증됨 |
+| 출력 비용 | **5배** 비용 배수 | API 가격: Output = Input의 5배 | 검증됨 |
+| 배치 실행 | **~3배** 메시지 감소 | `/do` = 2 msg vs `/plan` = 6+ msg | 측정됨 |
+| CLI 필터링 | **~50%** 도구 출력 감소 | `jq`, `mgrep` 필드 선택 | 추정 |
+| 원자적 롤백 | 실패당 **2-4 msg** 절약 | `git stash`로 dirty state 방지 | 추정 |
+
+> **종합 효율: 5-8배** (모델 선택 5x 기반, 출력 감소와 메시지 배치로 증폭. 롤백은 낭비 방지이며 배수는 변경 없음.)
 
 </details>
 
@@ -310,13 +390,14 @@ claude-pro-minmax
 │   ├── lint.sh                 # 범용 린트 스크립트
 │   ├── commit.sh               # 표준화된 git commit 도우미
 │   ├── create-branch.sh        # 브랜치 생성 도우미
+│   ├── snapshot.sh             # /do 명령의 원자적 롤백 (git stash)
 │   ├── analyze-failures.sh     # /analyze-failures용 로그 분석 도구
 │   ├── scrub-secrets.js        # 세션 저장 시 시크릿 제거 로직
 │   ├── hooks/                  # 제로-코스트 Hooks (자동화 체크)
 │   │   ├── critical-action-check.sh # 위험 명령어 사전 차단
 │   │   ├── tool-failure-log.sh      # 실패 로그 파일 기록
 │   │   ├── pre-compact.sh           # 압축 전처리기
-│   │   ├── compact-suggest.sh       # 임계값 도달 시 압축 제안
+│   │   ├── compact-suggest.sh       # 3단계 컴팩션 경고 (25/50/75)
 │   │   ├── post-edit-format.sh      # 편집 후 자동 포맷팅
 │   │   ├── readonly-check.sh        # 리뷰어 읽기 전용 강제
 │   │   ├── retry-check.sh           # 빌더 2회 재시도 제한 강제
@@ -407,6 +488,15 @@ A: macOS와 Linux를 지원합니다. Windows는 WSL을 통해 사용 가능합�
 <summary><strong>Q: 왜 모든 작업에 Opus를 사용하지 않나요?</strong></summary>
 
 A: API 가격(컴퓨팅 비용 반영)을 보면 Opus는 Sonnet이나 Haiku보다 훨씬 비쌉니다. 정확한 Pro Plan quota 영향은 공개되지 않았지만, 모든 작업에 Opus를 사용하면 quota가 훨씬 빠르게 소진될 것입니다. 명시적 모델 선택(`/do-opus`)으로 비싼 모델 사용 시 인지할 수 있도록 합니다.
+</details>
+
+<details>
+<summary><strong>Q: /do 실행 중 실패하면 어떻게 되나요?</strong></summary>
+
+A: CPMM은 **원자적 롤백**을 사용합니다. `/do` 실행 전 `git stash push`로 스냅샷을 저장합니다. 2회 재시도 후 실패하면 `git stash pop`이 작업 트리를 실행 전 상태로 복원합니다. dirty state를 방지하고 수동 정리에 소비될 2-4 메시지를 절약합니다.
+
+- 비용: 0 (git stash는 로컬 작업)
+- 제한: 기존(tracked) 파일만 추적. 새로 생성된 파일은 수동 제거 필요.
 </details>
 
 ---
