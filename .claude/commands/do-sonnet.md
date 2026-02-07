@@ -15,9 +15,11 @@ $ARGUMENTS
 
 ## Protocol
 1. Check CRITICAL_ACTIONS → confirm if found
-2. Execute immediately (no planner)
-3. Verify with `scripts/verify.sh` (runtime-adaptive)
-4. STOP + escalate after 2 retries
+2. **Snapshot**: `scripts/snapshot.sh push cpmm-sonnet`
+3. Execute immediately (no planner)
+4. Verify with `scripts/verify.sh` (runtime-adaptive)
+5. **On Success**: `scripts/snapshot.sh drop`
+6. **On Failure (2 retries)**: `scripts/snapshot.sh pop`. Then STOP + escalate.
 
 ## Verification (Runtime-Adaptive)
 | Type | Verification |

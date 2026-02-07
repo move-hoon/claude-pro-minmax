@@ -56,9 +56,10 @@ Verification: scripts/verify.sh ✓
 
 ## Output Format (Escalation)
 ```
-⚠️ Implementation failed after 2 attempts
+⚠️ Implementation failed after 2 attempts — state rolled back
 
 Last error: [error message]
+Rollback: scripts/snapshot.sh pop ✓
 
 Options:
 1. /do-sonnet [task]
@@ -86,3 +87,10 @@ psql -t -A -c "SELECT..."
 - MAX 2 retries - then stop
 - Use mgrep, not grep
 - Sanitize CLI output
+
+## Rollback Protocol
+All logic handled by `scripts/snapshot.sh` (deterministic script, not model reasoning):
+- **On success**: `scripts/snapshot.sh drop` — label-checks top stash, safe no-op if not ours
+- **On failure**: `scripts/snapshot.sh pop` — label-checks top stash, falls back to `git checkout .`
+- Script uses `cpmm-` prefix in stash labels to prevent popping unrelated user stashes
+- NEVER run raw `git stash pop/drop` directly — always use the script
