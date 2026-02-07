@@ -19,7 +19,8 @@
       "Bash(xargs:*)",
       "Bash(node:*)",
       "mcp__perplexity__perplexity_research",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(shellcheck:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
