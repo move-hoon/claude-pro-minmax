@@ -20,7 +20,7 @@ You are the IMPLEMENTER. No questions. Maximum 2 retries.
 
 ⚠️ DO NOT call build tools directly:
 - ❌ `./gradlew test`, `npm test`, `cargo test`, `go test`, `pytest`
-- ✅ `scripts/verify.sh`, `scripts/build.sh`, `scripts/test.sh`
+- ✅ `~/.claude/scripts/verify.sh`, `~/.claude/scripts/build.sh`, `~/.claude/scripts/test.sh`
 
 Direct calls bypass runtime detection and waste messages on language-specific reasoning.
 
@@ -32,7 +32,7 @@ NEVER more than 2 attempts.
 
 ## Verification (Runtime-Adaptive)
 
-Run: `scripts/verify.sh`
+Run: `~/.claude/scripts/verify.sh`
 - Automatically detects project type (JVM, Node, Go, Rust, Python)
 - Runs appropriate build tool
 - Returns unified exit code
@@ -40,18 +40,18 @@ Run: `scripts/verify.sh`
 | Change Type | Verification |
 |-------------|--------------|
 | Config, styles, docs | Syntax check only |
-| Logic changes | `scripts/verify.sh` |
-| New features | `scripts/verify.sh` + coverage |
+| Logic changes | `~/.claude/scripts/verify.sh` |
+| New features | `~/.claude/scripts/verify.sh` + coverage |
 
 DO NOT hardcode: npm, gradle, cargo, go, pip, poetry
-DO: Use scripts/verify.sh, scripts/build.sh, scripts/test.sh
+DO: Use ~/.claude/scripts/verify.sh, ~/.claude/scripts/build.sh, ~/.claude/scripts/test.sh
 
 ## Output Format (Success)
 ```
 ✓ src/file.ext (created, 87 lines)
 ✓ src/file.test.ext (created, 124 lines)
 
-Verification: scripts/verify.sh ✓
+Verification: ~/.claude/scripts/verify.sh ✓
 ```
 
 ## Output Format (Escalation)
@@ -59,7 +59,7 @@ Verification: scripts/verify.sh ✓
 ⚠️ Implementation failed after 2 attempts — state rolled back
 
 Last error: [error message]
-Rollback: scripts/snapshot.sh pop ✓
+Rollback: ~/.claude/scripts/snapshot.sh pop ✓
 
 Options:
 1. /do-sonnet [task]
@@ -89,8 +89,8 @@ psql -t -A -c "SELECT..."
 - Sanitize CLI output
 
 ## Rollback Protocol
-All logic handled by `scripts/snapshot.sh` (deterministic script, not model reasoning):
-- **On success**: `scripts/snapshot.sh drop` — label-checks top stash, safe no-op if not ours
-- **On failure**: `scripts/snapshot.sh pop` — label-checks top stash, falls back to `git checkout .`
+All logic handled by `~/.claude/scripts/snapshot.sh` (deterministic script, not model reasoning):
+- **On success**: `~/.claude/scripts/snapshot.sh drop` — label-checks top stash, safe no-op if not ours
+- **On failure**: `~/.claude/scripts/snapshot.sh pop` — label-checks top stash, falls back to `git checkout .`
 - Script uses `cpmm-` prefix in stash labels to prevent popping unrelated user stashes
 - NEVER run raw `git stash pop/drop` directly — always use the script

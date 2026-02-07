@@ -54,15 +54,15 @@ Contains sub-agent definitions for role-based task delegation with model optimiz
 
 **Protocol:**
 - Maximum 2 retries → Escalate on failure
-- Uses `scripts/verify.sh` (runtime-adaptive)
+- Uses `~/.claude/scripts/verify.sh` (runtime-adaptive)
 - No questions allowed (assumes or escalates)
 
 **Output Budget:** Success summary MAX 5 lines (file list + verification only). Escalation MAX 8 lines. No full code blocks — file:line references only.
 
 **Rollback Protocol:**
-- Via `/do*`: `scripts/snapshot.sh push` creates labeled stash with depth guard
-- On success: `scripts/snapshot.sh drop` (label-checked, safe no-op if no snapshot)
-- On failure: `scripts/snapshot.sh pop` (label-checked, falls back to `git checkout .`)
+- Via `/do*`: `~/.claude/scripts/snapshot.sh push` creates labeled stash with depth guard
+- On success: `~/.claude/scripts/snapshot.sh drop` (label-checked, safe no-op if no snapshot)
+- On failure: `~/.claude/scripts/snapshot.sh pop` (label-checked, falls back to `git checkout .`)
 - Prevents dirty state that wastes 2-4 messages on manual cleanup
 
 ### @reviewer (Code Review)
@@ -144,7 +144,7 @@ flowchart TD
 | @reviewer read-only enforcement | Hook-based blocking (`readonly-check.sh`). Prevents accidental modifications during review |
 | @dplanner with MCP tools | Research-heavy tasks justify MCP overhead. `sequential-thinking` + `perplexity` + `context7` enable fail-proof planning |
 | Output Budget per agent | Output costs 5x Input (API pricing). Strict budgets: builder 5 lines, reviewer 1 line PASS / 30 lines FAIL, dplanner 60 lines, planner 1 sentence/task |
-| @builder atomic rollback | `scripts/snapshot.sh` handles `git stash` with depth guard + label check before `/do` execution. Prevents popping unrelated user stashes. Failure triggers `pop` (or `git checkout .` on clean tree) → clean state for immediate escalation. Saves 2-4 messages per failure, zero API cost |
+| @builder atomic rollback | `~/.claude/scripts/snapshot.sh` handles `git stash` with depth guard + label check before `/do` execution. Prevents popping unrelated user stashes. Failure triggers `pop` (or `git checkout .` on clean tree) → clean state for immediate escalation. Saves 2-4 messages per failure, zero API cost |
 
 ## Adding Custom Agents
 
