@@ -33,9 +33,9 @@ cp "$SCRIPT_DIR/.claude/settings.json" ~/.claude/
 if [ -f "$SCRIPT_DIR/.claudeignore" ]; then
     cp "$SCRIPT_DIR/.claudeignore" ~/.claude/
 fi
-# Copy settings.local.json if it exists (contains Pro Plan overrides)
-if [ -f "$SCRIPT_DIR/.claude/settings.local.json" ]; then
-    cp "$SCRIPT_DIR/.claude/settings.local.json" ~/.claude/
+# Copy settings.local.json from example template (users customize after install)
+if [ -f "$SCRIPT_DIR/.claude/settings.local.example.json" ]; then
+    cp "$SCRIPT_DIR/.claude/settings.local.example.json" ~/.claude/settings.local.json
 fi
 cp "$SCRIPT_DIR/.claude/agents/"*.md ~/.claude/agents/
 cp "$SCRIPT_DIR/.claude/commands/"*.md ~/.claude/commands/

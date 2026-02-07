@@ -12,7 +12,7 @@ Thumbs.db
 !.claude/sessions/README.md
 !.claude/sessions/README.ko.md
 !.claude/sessions/2025-01-27-auth-jwt-refresh.md
-!.claude/settings.local.json
+.claude/settings.local.json
 .claude/logs/*.log
 
 # Node
