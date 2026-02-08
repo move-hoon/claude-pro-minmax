@@ -7,7 +7,7 @@
 
 # Claude Pro MinMax (CPMM)
 
-> **Minimum Tokens, Maximum Intelligence. Beyond the Quota limits.**
+> **Minimum Tokens, Maximum Intelligence. Optimize every token within Pro Plan's constraints.**
 
 A Claude Code configuration optimized for Pro Plan constraints.
 
@@ -146,6 +146,8 @@ Full command list for more sophisticated tasks or session management.
 
 > [!NOTE]
 > Anthropic's exact Quota algorithm is private. This configuration optimizes based on **API pricing and verified cost factors**; actual results may vary depending on task complexity.
+>
+> **Verified evidence:** Anthropic's official documentation confirms that *"Content in projects is cached and doesn't count against your limits when reused"* ([source](https://support.claude.com/en/articles/9797557-usage-limit-best-practices)), and that usage is affected by *"length, complexity, features, and model"* ([source](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits)). Community reports also confirm model-specific quota differences ([GitHub #9094](https://github.com/anthropics/claude-code/issues/9094)).
 
 Claude Pro Plan has constraints that fundamentally change how you should use Claude Code:
 
@@ -256,19 +258,37 @@ Let **p** = probability that a `/do` (batch) execution fails and requires escala
 | Strategy | Formula | Messages per 100 Tasks |
 |----------|---------|----------------------|
 | Always `/plan` (sequential) | 6 × 100 | **600** |
-| Hybrid (`/do` default) | 2×(1−p)×100 + (4+6)×p×100 | **200 + 800p** |
+| Hybrid (`/do` default) | 2×(1−p)×100 + (2+6)×p×100 | **200 + 600p** |
 
-**Break-even**: 200 + 800p = 600 → **p = 0.50 (50%)**
+**Break-even**: 200 + 600p = 600 → **p = 0.67 (67%)**
+
+> Note: `/do` failure = 2 messages (1 user request + 1 Claude failure report). Retries occur within the subagent, not as separate messages.
 
 | Failure Rate (p) | Hybrid Cost | Sequential Cost | Savings |
 |:-:|:-:|:-:|:-:|
-| 10% | 280 msg | 600 msg | **53%** |
-| 20% | 360 msg | 600 msg | **40%** |
-| 30% | 440 msg | 600 msg | **27%** |
-| 40% | 520 msg | 600 msg | **13%** |
-| 50% | 600 msg | 600 msg | 0% (break-even) |
+| 10% | 260 msg | 600 msg | **57%** |
+| 20% | 320 msg | 600 msg | **47%** |
+| 30% | 380 msg | 600 msg | **37%** |
+| 50% | 500 msg | 600 msg | **17%** |
+| 67% | 600 msg | 600 msg | 0% (break-even) |
 
-**Conclusion**: Hybrid outperforms always-sequential for any realistic failure rate below 50%.
+**Conclusion**: Hybrid outperforms always-sequential for any realistic failure rate below 67%.
+
+### Subagent Cache Tradeoff
+
+> [!NOTE]
+> This analysis is **[Estimated]** — subagent cache sharing behavior is not documented in official sources.
+
+CPMM's `/do` command uses subagents (Task tool) for batch execution. This creates a cache tradeoff:
+
+| Execution | Messages | Cache Behavior |
+|-----------|----------|---------------|
+| **Batch (subagent)** | 2 msg | New context → Cache Write (1.25x). Cannot reuse parent's cached prefix |
+| **Sequential (same context)** | 6+ msg | Same context → Cache Read (0.1x) on subsequent turns |
+
+**Why batch is still the default**: For short, well-defined tasks (1-3 files), the message savings (2 vs 6+) outweigh the cache penalty. Sequential execution benefits more from caching in long, multi-turn sessions with large context.
+
+**Official basis**: *"Each subagent runs in its own context window"* — [code.claude.com/docs/sub-agents](https://code.claude.com/docs/en/sub-agents). Cache sharing between parent and subagent contexts is not documented ([GitHub #5812](https://github.com/anthropics/claude-code/issues/5812)).
 
 ### Atomic Rollback Cost-Benefit
 
@@ -289,7 +309,7 @@ Let **p** = probability that a `/do` (batch) execution fails and requires escala
 | CLI Filtering (jq) | Reduces unnecessary output | JSON field selection on structured data | Estimated |
 | Atomic Rollback | **2-4 msg** saved per failure | `git stash` prevents dirty state | Estimated |
 
-> **Overall Efficiency: 5-8x** (driven by model selection 5x, amplified by output reduction and message batching. Rollback prevents waste but does not change the multiplier.)
+> **Core Efficiency: 5x verified** (model selection: Haiku $1 vs Opus $5 /MTok). Additional estimated savings from output budgets (~60%), batch execution (~3x fewer messages), and CLI filtering (~50% tool output reduction). Rollback prevents waste on failure.
 
 </details>
 
@@ -479,6 +499,31 @@ A: CPMM uses **Atomic Rollback**. Before `/do` executes, `git stash push` saves 
 - Cost: Zero (git stash is a local operation)
 - Limitation: Only tracks existing (tracked) files. Newly created files require manual removal.
 </details>
+
+---
+
+## Evidence & Sources
+
+### Verified (Official Documentation)
+- Model pricing: Haiku $1, Sonnet $3, Opus $5 /MTok input — [docs.anthropic.com/pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
+- Output = 5x input pricing — [docs.anthropic.com/pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
+- Prompt caching: Cache Read = 0.1x — [platform.claude.com/docs/prompt-caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching)
+- Pro Plan caching: *"Content in projects is cached and doesn't count against your limits"* — [support.claude.com](https://support.claude.com/en/articles/9797557-usage-limit-best-practices)
+- Usage factors: *"length, complexity, features, model"* — [support.claude.com](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits)
+- Subagent context isolation: *"Each subagent runs in its own context window"* — [code.claude.com/docs/sub-agents](https://code.claude.com/docs/en/sub-agents)
+
+### Community Evidence
+- Model-specific quota impact: Haiku ~5%/session vs Sonnet significantly higher — [GitHub #9094](https://github.com/anthropics/claude-code/issues/9094)
+- Quota variability: 5.6%-59.9%/hour on same plan — [GitHub #22435](https://github.com/anthropics/claude-code/issues/22435)
+- Subagent context bridging request (closed) — [GitHub #5812](https://github.com/anthropics/claude-code/issues/5812)
+
+### Estimated (Not Independently Verified)
+- ~60% output reduction from agent response budgets
+- ~3x fewer messages from batch execution (2 msg vs 6+ msg)
+- 2-4 messages saved per atomic rollback on failure
+- Subagent cache isolation (inferred from context isolation — not officially documented)
+- Tool definition overhead: ~300-500 tokens per tool per turn
+- Extended Thinking: ~4-5x token consumption when enabled
 
 ---
 

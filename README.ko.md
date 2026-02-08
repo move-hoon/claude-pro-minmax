@@ -7,7 +7,7 @@
 
 # Claude Pro MinMax (CPMM)
 
-> **토큰은 Minimum, 지능은 Maximum. Quota의 한계를 뛰어넘으세요.**
+> **토큰은 Minimum, 지능은 Maximum. Pro Plan의 한계 안에서 모든 토큰을 최적화하세요.**
 
 Pro Plan 제약에 최적화된 Claude Code 설정입니다.
 
@@ -146,6 +146,8 @@ flowchart LR
 
 > [!NOTE]
 > Anthropic의 정확한 Quota 알고리즘은 비공개입니다. 본 설정은 **API 가격 및 검증된 비용 요인**을 기반으로 최적화하며, 실제 결과는 작업 복잡도에 따라 달라질 수 있습니다.
+>
+> **검증된 증거:** Anthropic 공식 문서에서 *"Content in projects is cached and doesn't count against your limits when reused"* ([출처](https://support.claude.com/en/articles/9797557-usage-limit-best-practices))와 사용량이 *"length, complexity, features, and model"*에 영향받는다고 확인 ([출처](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits)). 커뮤니티 보고에서도 모델별 쿼터 차이 확인 ([GitHub #9094](https://github.com/anthropics/claude-code/issues/9094)).
 
 Claude Pro Plan에는 Claude Code 사용 방식을 근본적으로 바꾸는 제약이 있습니다:
 
@@ -256,19 +258,37 @@ Total_Quota ≈ Σ f(model_weight_i, context_size_i, output_size_i)
 | 전략 | 공식 | 100개 작업당 메시지 |
 |------|------|-------------------|
 | 항상 `/plan` (순차) | 6 × 100 | **600** |
-| 하이브리드 (`/do` 기본) | 2×(1−p)×100 + (4+6)×p×100 | **200 + 800p** |
+| 하이브리드 (`/do` 기본) | 2×(1−p)×100 + (2+6)×p×100 | **200 + 600p** |
 
-**손익분기점**: 200 + 800p = 600 → **p = 0.50 (50%)**
+**손익분기점**: 200 + 600p = 600 → **p = 0.67 (67%)**
+
+> Note: `/do` 실패 = 2 메시지 (사용자 요청 1 + Claude 실패 보고 1). 재시도는 서브에이전트 내에서 발생하므로 별도 메시지가 아닙니다.
 
 | 실패율 (p) | 하이브리드 비용 | 순차 비용 | 절약률 |
 |:-:|:-:|:-:|:-:|
-| 10% | 280 msg | 600 msg | **53%** |
-| 20% | 360 msg | 600 msg | **40%** |
-| 30% | 440 msg | 600 msg | **27%** |
-| 40% | 520 msg | 600 msg | **13%** |
-| 50% | 600 msg | 600 msg | 0% (손익분기) |
+| 10% | 260 msg | 600 msg | **57%** |
+| 20% | 320 msg | 600 msg | **47%** |
+| 30% | 380 msg | 600 msg | **37%** |
+| 50% | 500 msg | 600 msg | **17%** |
+| 67% | 600 msg | 600 msg | 0% (손익분기) |
 
-**결론**: 하이브리드 전략은 현실적인 실패율(50% 미만) 모든 구간에서 항상-순차 전략보다 우월합니다.
+**결론**: 하이브리드 전략은 현실적인 실패율(67% 미만) 모든 구간에서 항상-순차 전략보다 우월합니다.
+
+### 서브에이전트 캐시 트레이드오프
+
+> [!NOTE]
+> 이 분석은 **[추정]**입니다 — 서브에이전트 캐시 공유 동작은 공식 문서에 기록되어 있지 않습니다.
+
+CPMM의 `/do` 명령은 배치 실행을 위해 서브에이전트(Task tool)를 사용합니다. 이는 캐시 트레이드오프를 만듭니다:
+
+| 실행 방식 | 메시지 | 캐시 동작 |
+|-----------|--------|-----------|
+| **배치 (서브에이전트)** | 2 msg | 새 컨텍스트 → Cache Write (1.25x). 부모의 캐시된 프리픽스 재사용 불가 |
+| **순차 (같은 컨텍스트)** | 6+ msg | 같은 컨텍스트 → 이후 턴에서 Cache Read (0.1x) |
+
+**배치가 여전히 기본인 이유**: 짧고 명확한 작업(1-3 파일)에서는 메시지 절약(2 vs 6+)이 캐시 페널티를 상쇄합니다. 순차 실행은 큰 컨텍스트를 가진 긴 멀티턴 세션에서 캐싱 혜택이 더 큽니다.
+
+**공식 근거**: *"Each subagent runs in its own context window"* — [code.claude.com/docs/sub-agents](https://code.claude.com/docs/en/sub-agents). 부모와 서브에이전트 컨텍스트 간 캐시 공유는 문서화되지 않음 ([GitHub #5812](https://github.com/anthropics/claude-code/issues/5812)).
 
 ### 원자적 롤백 비용-편익
 
@@ -289,7 +309,7 @@ Total_Quota ≈ Σ f(model_weight_i, context_size_i, output_size_i)
 | CLI 필터링 (jq) | 불필요한 출력 제거 | 구조화 데이터의 JSON 필드 선택 | 추정 |
 | 원자적 롤백 | 실패당 **2-4 msg** 절약 | `git stash`로 dirty state 방지 | 추정 |
 
-> **종합 효율: 5-8배** (모델 선택 5x 기반, 출력 감소와 메시지 배치로 증폭. 롤백은 낭비 방지이며 배수는 변경 없음.)
+> **핵심 효율: 5배 검증** (모델 선택: Haiku $1 vs Opus $5 /MTok). 출력 예산(~60%), 배치 실행(~3배 메시지 감소), CLI 필터링(~50% 도구 출력 감소)으로 추가 절감 (추정). 롤백은 실패 시 낭비 방지.
 
 </details>
 
@@ -479,6 +499,31 @@ A: CPMM은 **원자적 롤백**을 사용합니다. `/do` 실행 전 `git stash 
 - 비용: 0 (git stash는 로컬 작업)
 - 제한: 기존(tracked) 파일만 추적. 새로 생성된 파일은 수동 제거 필요.
 </details>
+
+---
+
+## 증거 및 출처 (Evidence & Sources)
+
+### 검증됨 (공식 문서)
+- 모델 가격: Haiku $1, Sonnet $3, Opus $5 /MTok input — [docs.anthropic.com/pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
+- Output = Input의 5배 가격 — [docs.anthropic.com/pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
+- Prompt caching: Cache Read = 0.1x — [platform.claude.com/docs/prompt-caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching)
+- Pro Plan 캐싱: *"Content in projects is cached and doesn't count against your limits"* — [support.claude.com](https://support.claude.com/en/articles/9797557-usage-limit-best-practices)
+- 사용량 요인: *"length, complexity, features, model"* — [support.claude.com](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits)
+- 서브에이전트 컨텍스트 격리: *"Each subagent runs in its own context window"* — [code.claude.com/docs/sub-agents](https://code.claude.com/docs/en/sub-agents)
+
+### 커뮤니티 증거
+- 모델별 쿼터 영향: Haiku ~5%/session vs Sonnet 훨씬 높음 — [GitHub #9094](https://github.com/anthropics/claude-code/issues/9094)
+- 쿼터 변동성: 같은 플랜에서 5.6%-59.9%/hour — [GitHub #22435](https://github.com/anthropics/claude-code/issues/22435)
+- 서브에이전트 컨텍스트 브릿징 요청 (closed) — [GitHub #5812](https://github.com/anthropics/claude-code/issues/5812)
+
+### 추정 (독립적 검증 미완)
+- 에이전트 응답 예산으로 ~60% 출력 감소
+- 배치 실행으로 ~3배 메시지 감소 (2 msg vs 6+ msg)
+- 원자적 롤백으로 실패당 2-4 메시지 절약
+- 서브에이전트 캐시 격리 (컨텍스트 격리에서 추론 — 공식 문서 없음)
+- 도구 정의 오버헤드: 턴당 도구당 ~300-500 토큰
+- Extended Thinking: 활성화 시 ~4-5배 토큰 소비
 
 ---
 
