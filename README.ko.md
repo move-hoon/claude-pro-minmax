@@ -147,7 +147,10 @@ flowchart LR
 > [!NOTE]
 > Anthropic의 정확한 Quota 알고리즘은 비공개입니다. 본 설정은 **API 가격 및 검증된 비용 요인**을 기반으로 최적화하며, 실제 결과는 작업 복잡도에 따라 달라질 수 있습니다.
 >
-> **검증된 증거:** Anthropic 공식 문서에서 *"Content in projects is cached and doesn't count against your limits when reused"* ([출처](https://support.claude.com/en/articles/9797557-usage-limit-best-practices))와 사용량이 *"length, complexity, features, and model"*에 영향받는다고 확인 ([출처](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits)). 커뮤니티 보고에서도 모델별 쿼터 차이 확인 ([GitHub #9094](https://github.com/anthropics/claude-code/issues/9094)).
+> **검증된 증거:**
+> - **공식 문서**: *"Content in projects is cached and doesn't count against your limits when reused"* ([출처](https://support.claude.com/en/articles/9797557-usage-limit-best-practices))
+> - **사용량 요인**: *"length, complexity, features, and model"*에 영향받음 ([출처](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits))
+> - **커뮤니티**: 모델별 쿼터 차이 확인 ([GitHub #9094](https://github.com/anthropics/claude-code/issues/9094))
 
 Claude Pro Plan에는 Claude Code 사용 방식을 근본적으로 바꾸는 제약이 있습니다:
 
@@ -287,8 +290,10 @@ CPMM의 `/do` 명령은 배치 실행을 위해 서브에이전트(Task tool)를
 | **순차 (같은 컨텍스트)** | 6+ msg | 같은 컨텍스트 → 이후 턴에서 Cache Read (0.1x) |
 
 **배치가 여전히 기본인 이유**: 짧고 명확한 작업(1-3 파일)에서는 메시지 절약(2 vs 6+)이 캐시 페널티를 상쇄합니다. 순차 실행은 큰 컨텍스트를 가진 긴 멀티턴 세션에서 캐싱 혜택이 더 큽니다.
-
-**공식 근거**: *"Each subagent runs in its own context window"* — [code.claude.com/docs/sub-agents](https://code.claude.com/docs/en/sub-agents). 부모와 서브에이전트 컨텍스트 간 캐시 공유는 문서화되지 않음 ([GitHub #5812](https://github.com/anthropics/claude-code/issues/5812)).
+ 
+**공식 근거:**
+- **컨텍스트 격리**: *"Each subagent runs in its own context window"* ([출처](https://code.claude.com/docs/en/sub-agents))
+- **문서화 공백**: 부모와 서브에이전트 컨텍스트 간 캐시 공유는 문서화되지 않음 ([GitHub #5812](https://github.com/anthropics/claude-code/issues/5812))
 
 ### 원자적 롤백 비용-편익
 
@@ -309,7 +314,10 @@ CPMM의 `/do` 명령은 배치 실행을 위해 서브에이전트(Task tool)를
 | CLI 필터링 (jq) | 불필요한 출력 제거 | 구조화 데이터의 JSON 필드 선택 | 추정 |
 | 원자적 롤백 | 실패당 **2-4 msg** 절약 | `git stash`로 dirty state 방지 | 추정 |
 
-> **핵심 효율: 5배 검증** (모델 선택: Haiku $1 vs Opus $5 /MTok). 출력 예산(~60%), 배치 실행(~3배 메시지 감소), CLI 필터링(~50% 도구 출력 감소)으로 추가 절감 (추정). 롤백은 실패 시 낭비 방지.
+> **핵심 효율:**
+> - **5배 검증**: 모델 선택 (Haiku $1 vs Opus $5 /MTok)
+> - **추가 절감 (추정)**: 출력 예산(~60%), 배치 실행(~3배 메시지 감소), CLI 필터링(~50% 도구 출력 감소)
+> - **안전장치**: 원자적 롤백으로 실패 시 낭비 방지
 
 </details>
 

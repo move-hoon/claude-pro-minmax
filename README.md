@@ -147,7 +147,10 @@ Full command list for more sophisticated tasks or session management.
 > [!NOTE]
 > Anthropic's exact Quota algorithm is private. This configuration optimizes based on **API pricing and verified cost factors**; actual results may vary depending on task complexity.
 >
-> **Verified evidence:** Anthropic's official documentation confirms that *"Content in projects is cached and doesn't count against your limits when reused"* ([source](https://support.claude.com/en/articles/9797557-usage-limit-best-practices)), and that usage is affected by *"length, complexity, features, and model"* ([source](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits)). Community reports also confirm model-specific quota differences ([GitHub #9094](https://github.com/anthropics/claude-code/issues/9094)).
+> **Verified evidence:**
+> - **Official Docs**: *"Content in projects is cached and doesn't count against your limits when reused"* ([source](https://support.claude.com/en/articles/9797557-usage-limit-best-practices))
+> - **Usage Factors**: *"length, complexity, features, and model"* ([source](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits))
+> - **Community**: Significant model-specific quota differences reported ([GitHub #9094](https://github.com/anthropics/claude-code/issues/9094))
 
 Claude Pro Plan has constraints that fundamentally change how you should use Claude Code:
 
@@ -287,8 +290,10 @@ CPMM's `/do` command uses subagents (Task tool) for batch execution. This create
 | **Sequential (same context)** | 6+ msg | Same context → Cache Read (0.1x) on subsequent turns |
 
 **Why batch is still the default**: For short, well-defined tasks (1-3 files), the message savings (2 vs 6+) outweigh the cache penalty. Sequential execution benefits more from caching in long, multi-turn sessions with large context.
-
-**Official basis**: *"Each subagent runs in its own context window"* — [code.claude.com/docs/sub-agents](https://code.claude.com/docs/en/sub-agents). Cache sharing between parent and subagent contexts is not documented ([GitHub #5812](https://github.com/anthropics/claude-code/issues/5812)).
+ 
+**Official Basis:**
+- **Context Isolation**: *"Each subagent runs in its own context window"* ([source](https://code.claude.com/docs/en/sub-agents))
+- **Documentation Gap**: Cache sharing between parent and subagent contexts is not documented ([GitHub #5812](https://github.com/anthropics/claude-code/issues/5812))
 
 ### Atomic Rollback Cost-Benefit
 
@@ -309,7 +314,10 @@ CPMM's `/do` command uses subagents (Task tool) for batch execution. This create
 | CLI Filtering (jq) | Reduces unnecessary output | JSON field selection on structured data | Estimated |
 | Atomic Rollback | **2-4 msg** saved per failure | `git stash` prevents dirty state | Estimated |
 
-> **Core Efficiency: 5x verified** (model selection: Haiku $1 vs Opus $5 /MTok). Additional estimated savings from output budgets (~60%), batch execution (~3x fewer messages), and CLI filtering (~50% tool output reduction). Rollback prevents waste on failure.
+> **Core Efficiency:**
+> - **5x Verified**: Model selection (Haiku $1 vs Opus $5 /MTok)
+> - **Estimated Savings**: Output budgets (~60%), Batch execution (~3x fewer messages), CLI filtering (~50% less output)
+> - **Safety**: Atomic rollback prevents waste on failure
 
 </details>
 
