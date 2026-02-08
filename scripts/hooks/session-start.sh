@@ -62,7 +62,7 @@ cat <<'BUDGET'
 {
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": "📊 Pro Plan: ~45 msg/5h (short conversations). Default: /do (2 msg batch). /plan = 6+ msg (use for 4+ files). Model cost: Haiku=1x, Sonnet=3x, Opus=5x. Output costs 5x Input."
+    "additionalContext": "📊 Pro Plan Strategy: ~45 msg/5h target (short conversations)\n• Default (/do): 2 msg (Batch plan+build+verify)\n• Complex (/plan): 6+ msg (Use for 4+ files)\n• Cost: Haiku(1x) vs Sonnet(3x) vs Opus(5x) | Out=5x In"
   }
 }
 BUDGET
