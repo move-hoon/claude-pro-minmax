@@ -137,7 +137,7 @@ Contains slash command definitions for common workflows.
 | Aspect | /do | /do-sonnet | /do-opus | /plan | /dplan |
 |--------|-----|------------|----------|-------|--------|
 | **Model** | Haiku 4.5 (default) | Sonnet 4.5 | Opus 4.6 | Sonnet 4.5 → Haiku 4.5 | Sonnet 4.5 + MCP |
-| **Cost** | 1x | 5x | 25x | 6x | 10-15x |
+| **Cost** | 1x | ~3x | ~5x | ~6x | ~10-15x |
 | **Planning** | Internal (batch) | Internal (batch) | Internal (batch) | Architecture design | Deep research |
 | **Use Case** | Simple tasks | Complex logic | Critical decisions | Multi-file features | Unknown unknowns |
 | **Files Affected** | 1-2 | 1-3 | Any | 5+ | Any |

@@ -30,7 +30,7 @@ $ARGUMENTS
 DO NOT call build tools directly. Use `~/.claude/scripts/verify.sh`.
 
 ## Cost Note
-Sonnet costs ~12x more than Haiku. Use only when:
+Sonnet costs ~3x more than Haiku (API pricing: $3 vs $1 /MTok input). Use only when:
 - Default `/do` failed after 2 retries
 - Task requires complex reasoning or multi-step logic
 - Architecture-level code changes
