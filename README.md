@@ -208,6 +208,8 @@ This project provides detailed documentation for each component. Refer to the li
 ```text
 claude-pro-minmax
 ├── .claude.json                # Global MCP Settings (User Scope)
+├── .claudeignore               # Files excluded from Claude's context
+├── .gitignore                  # Git ignore rules
 ├── install.sh                  # One-click installation script
 ├── LICENSE                     # MIT License
 ├── README.md                   # English Documentation
@@ -215,7 +217,7 @@ claude-pro-minmax
 ├── .claude/
 │   ├── CLAUDE.md               # Core Instructions (Loaded in all sessions)
 │   ├── settings.json           # Project Settings (Permissions, hooks, env vars)
-│   ├── settings.local.json     # Local user settings (typically gitignored for per-user overrides)
+│   ├── settings.local.example.json # Template for ~/.claude/settings.local.json
 │   ├── agents/                 # Agent Definitions
 │   │   ├── planner.md          # Sonnet 4.5: Architecture and design decisions
 │   │   ├── dplanner.md         # Sonnet 4.5+MCP: Deep planning utilizing external tools
@@ -242,13 +244,23 @@ claude-pro-minmax
 │   │   └── security.md         # Security best practices
 │   ├── skills/                 # Tool Capabilities
 │   │   ├── cli-wrappers/       # Lightweight CLI wrappers (Replaces MCP overhead)
+│   │   │   ├── SKILL.md        # Skill definition and usage
+│   │   │   └── references/     # CLI reference documentation
+│   │   │       ├── github-cli.md
+│   │   │       └── mgrep.md
 │   │   └── learned/            # Patterns accumulated through /learn command
 │   ├── contexts/               # Context Templates
 │   │   ├── backend-context.md  # Backend-specific instructions
 │   │   └── frontend-context.md # Frontend-specific instructions
-│   ├── logs/                   # Log Directory
-│   │   └── tool-failures.log   # Tool failure records
 │   └── sessions/               # Saved session summaries (Markdown)
+├── .github/
+│   └── ISSUE_TEMPLATE/
+│       └── feedback.md         # Issue template for feedback
+├── docs/                       # Project Documentation
+│   ├── CORE_STRATEGY_EXPERIMENT_ARCHIVE.md    # Experiment evidence (EN)
+│   ├── CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md # Experiment evidence (KO)
+│   ├── USER-MANUAL.md          # User manual (EN)
+│   └── USER-MANUAL.ko.md       # User manual (KO)
 ├── scripts/                    # Utilities and Automation
 │   ├── verify.sh               # General-purpose verification script
 │   ├── build.sh                # General-purpose build script
@@ -284,7 +296,13 @@ claude-pro-minmax
 │           └── rust.sh         # Rust adapter
 └── project-templates/          # Language and Framework Templates
     ├── backend/                # Backend project template
+    │   └── .claude/
+    │       ├── CLAUDE.md
+    │       └── settings.json
     └── frontend/               # Frontend project template
+        └── .claude/
+            ├── CLAUDE.md
+            └── settings.json
 ```
 
 </details>

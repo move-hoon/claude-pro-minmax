@@ -208,6 +208,8 @@ flowchart LR
 ```text
 claude-pro-minmax
 ├── .claude.json                # 글로벌 MCP 설정 (User Scope)
+├── .claudeignore               # Claude 컨텍스트 제외 규칙
+├── .gitignore                  # Git ignore 규칙
 ├── install.sh                  # 원클릭 설치 스크립트
 ├── LICENSE                     # MIT 라이선스
 ├── README.md                   # 영문 문서
@@ -215,7 +217,7 @@ claude-pro-minmax
 ├── .claude/
 │   ├── CLAUDE.md               # 핵심 지침 (모든 세션에 로드됨)
 │   ├── settings.json           # 프로젝트 설정 (권한, 훅, 환경변수)
-│   ├── settings.local.json     # 로컬 사용자 설정 (사용자별 오버라이드 용도로 일반적으로 gitignore 대상)
+│   ├── settings.local.example.json # ~/.claude/settings.local.json용 템플릿
 │   ├── agents/                 # 에이전트 정의
 │   │   ├── planner.md          # Sonnet 4.5: 아키텍처 및 설계 결정
 │   │   ├── dplanner.md         # Sonnet 4.5+MCP: 외부 도구를 활용한 심층 계획
@@ -242,13 +244,23 @@ claude-pro-minmax
 │   │   └── security.md         # 보안 모범 사례
 │   ├── skills/                 # 도구 능력
 │   │   ├── cli-wrappers/       # 경량 CLI 래퍼 (MCP 오버헤드 대체)
+│   │   │   ├── SKILL.md        # 스킬 정의 및 사용법
+│   │   │   └── references/     # CLI 참조 문서
+│   │   │       ├── github-cli.md
+│   │   │       └── mgrep.md
 │   │   └── learned/            # /learn 명령어로 축적된 패턴
 │   ├── contexts/               # 컨텍스트 템플릿
 │   │   ├── backend-context.md  # 백엔드 전용 지침
 │   │   └── frontend-context.md # 프론트엔드 전용 지침
-│   ├── logs/                   # 로그 디렉토리
-│   │   └── tool-failures.log   # 도구 실패 기록
 │   └── sessions/               # 저장된 세션 요약 (Markdown)
+├── .github/
+│   └── ISSUE_TEMPLATE/
+│       └── feedback.md         # 피드백용 이슈 템플릿
+├── docs/                       # 프로젝트 문서
+│   ├── CORE_STRATEGY_EXPERIMENT_ARCHIVE.md    # 실험 근거 아카이브 (EN)
+│   ├── CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md # 실험 근거 아카이브 (KO)
+│   ├── USER-MANUAL.md          # 사용자 매뉴얼 (EN)
+│   └── USER-MANUAL.ko.md       # 사용자 매뉴얼 (KO)
 ├── scripts/                    # 유틸리티 및 자동화
 │   ├── verify.sh               # 범용 검증 스크립트
 │   ├── build.sh                # 범용 빌드 스크립트
@@ -284,7 +296,13 @@ claude-pro-minmax
 │           └── rust.sh         # Rust 어댑터
 └── project-templates/          # 언어 및 프레임워크 템플릿
     ├── backend/                # 백엔드 프로젝트 템플릿
+    │   └── .claude/
+    │       ├── CLAUDE.md
+    │       └── settings.json
     └── frontend/               # 프론트엔드 프로젝트 템플릿
+        └── .claude/
+            ├── CLAUDE.md
+            └── settings.json
 ```
 
 </details>
