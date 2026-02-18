@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Complex task planning with @planner to @builder chain. Use when affecting 5+ files, requiring architecture decisions, unclear requirements, or new feature implementation.
+description: Complex task planning with @planner to @builder chain. Use when affecting 4+ files, requiring architecture decisions, unclear requirements, or new feature implementation.
 argument-hint: [feature description] or --no-build [description]
 context: fork
 agent: planner
@@ -26,7 +26,7 @@ $ARGUMENTS
 6. (Optional) @reviewer: Review
 
 ## When to Use
-- Affecting 5+ files
+- Affecting 4+ files
 - Architecture decisions needed
 - Unclear requirements
 - New feature implementation
