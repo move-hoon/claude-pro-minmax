@@ -162,7 +162,7 @@ Full command list for more sophisticated tasks or session management.
 ## Core Strategy
 
 > [!NOTE]
-> Anthropic does not publish the exact Pro quota formula. This README focuses on practical operating rules you can use immediately. For archived experiment evidence backing this strategy, see [docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md).
+> Anthropic does not publish the exact Pro quota formula. This README focuses on practical operating rules you can use immediately. For archived experiment evidence backing this strategy, see the [Core Strategy Experiment Archive](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md).
 
 ### Goal
 

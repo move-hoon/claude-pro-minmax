@@ -162,7 +162,7 @@ flowchart LR
 ## 핵심 전략
 
 > [!NOTE]
-> Anthropic은 Pro quota의 정확한 계산 공식을 공개하지 않습니다. 이 README는 바로 적용 가능한 사용자 운영 규칙에 집중합니다. 전략 근거 실험 아카이브는 [docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md)를 참고하세요.
+> Anthropic은 Pro quota의 정확한 계산 공식을 공개하지 않습니다. 이 README는 바로 적용 가능한 사용자 운영 규칙에 집중합니다. 전략 근거 실험 아카이브는 [핵심전략 실험 아카이브](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md)를 참고하세요.
 
 ### 목표
 
