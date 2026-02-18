@@ -7,9 +7,9 @@
 
 # Claude Pro MinMax (CPMM)
 
-> **Minimize token waste, maximize useful work per quota window.**
+> **Minimize waste. Maximize validated work.**
 
-A Claude Code configuration optimized for Pro Plan constraints.
+CPMM helps Pro users complete more verified tasks before reset through model routing, output control, and local safety rails.
 
 > **Already installed? Start here: [User Guide](docs/USER-MANUAL.md)**
 
@@ -166,7 +166,7 @@ Full command list for more sophisticated tasks or session management.
 
 ### Goal
 
-**Maximize useful work per quota window** by minimizing quota per validated task.
+**Maximize validated throughput per quota window** by reducing quota spend per validated task.
 
 ### Operating Principles
 
