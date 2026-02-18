@@ -389,7 +389,7 @@ A: CPMM uses **Atomic Rollback**. Before `/do` executes, `git stash push` saves 
 
 ## References
 
-- Archived experiment evidence for core strategy: [docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md)
+- Archived experiment evidence for core strategy: [Core Strategy Experiment Archive](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md)
 - Official pricing and usage docs:
   - [Anthropic Pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
   - [Usage Limit Best Practices](https://support.claude.com/en/articles/9797557-usage-limit-best-practices)

@@ -389,7 +389,7 @@ A: CPMM은 **원자적 롤백**을 사용합니다. `/do` 실행 전 `git stash 
 
 ## 참고 링크
 
-- 핵심전략 근거 실험 아카이브: [docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md)
+- 핵심전략 근거 실험 아카이브: [핵심전략 실험 아카이브](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md)
 - 공식 문서:
   - [Anthropic Pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
   - [Usage Limit Best Practices](https://support.claude.com/en/articles/9797557-usage-limit-best-practices)
