@@ -13,7 +13,7 @@ Result interpretation:
 - `/review` returns `PASS` or `FAIL`.  
   `PASS` = proceed. `FAIL` = fix and rerun review on touched paths.
 - `Repeated failure` for `/do` means: attempt 1 fails and attempt 2 fails (retries exhausted), including verification failure.
-- Escalation is manual. CPMM suggests next command (`/do-sonnet`, `/do-opus`, or `/plan`) but does not auto-switch your command.
+- Escalation is manual. CPMM suggests next command (`/do-sonnet` or `/plan`) on failure but does not auto-switch your command.
 - If `/do` fails repeatedly, escalate to `/do-sonnet`, then `/do-opus` only if still blocked.
 - If a critical-action confirmation appears, either confirm intentionally or stop.
 
@@ -36,25 +36,33 @@ Result interpretation:
 | Situation | Use | Example |
 |---|---|---|
 | Small, clear task (1-3 files) | `/do` | `/do Fix null check in user service and add minimal test.` |
-| Multi-file feature or unclear structure | `/plan` | `/plan Add JWT refresh flow with rotation.` |
+| Multi-file feature (4+ files) or unclear structure | `/plan` | `/plan Add JWT refresh flow with rotation.` |
 | Same as above, but plan only | `/plan --no-build` | `/plan --no-build Propose DB migration strategy for billing.` |
-| Need deep research/verification | `/dplan` | `/dplan Analyze race conditions in payment retries.` |
-| `/do` failed repeatedly on logic complexity | `/do-sonnet` | `/do-sonnet Implement conflict-safe cache invalidation.` |
-| Sonnet still fails or critical decision | `/do-opus` | `/do-opus Resolve deadlock risk in transaction coordinator.` |
+| Need deep research (Sequential Thinking + Perplexity + Context7) | `/dplan` | `/dplan Analyze race conditions in payment retries.` |
+| `/do` failed repeatedly on logic complexity | `/do-sonnet` (~3x Haiku) | `/do-sonnet Implement conflict-safe cache invalidation.` |
+| Sonnet still fails or critical decision | `/do-opus` (~5x Haiku) | `/do-opus Resolve deadlock risk in transaction coordinator.` |
 | Review changes before merge | `/review` | `/review src/auth/` |
 | Security-focused review | `/review --security` | `/review --security src/auth/` |
 | Save progress before stopping | `/session-save` | `/session-save auth-refresh` |
-| Resume previous work | `/session-load` | `/session-load auth-refresh` |
+| Resume previous work by name | `/session-load` | `/session-load auth-refresh` |
+| Resume latest session (no name needed) | `/session-load` | `/session-load` |
 | List saved sessions first | `/session-load --list` | `/session-load --list` |
-| Context getting noisy by phase | `/compact-phase` | `/compact-phase implementation` |
+| Context getting noisy — get phase-specific compact guide | `/compact-phase` | `/compact-phase implementation` |
 | Compact after deep planning | `/compact-phase deep-planning` | `/compact-phase deep-planning` |
 | Long-running watch (tests/dev/build) | `/watch` | `/watch tests` |
 | Long-running custom command | `/watch custom` | `/watch custom \"pnpm test:e2e --watch\"` |
+| Load context template (≤2 recommended) | `/load-context` | `/load-context backend` |
 | Load saved session context | `/load-context session` | `/load-context session` |
-| Capture reusable pattern | `/learn` | `/learn "Use DTO mappers for API responses"` |
+| Auto-analyze session for reusable patterns | `/learn` | `/learn` |
+| Capture a specific pattern | `/learn` | `/learn "Use DTO mappers for API responses"` |
 | Show learned patterns | `/learn --show` | `/learn --show` |
-| Analyze recurring tool failures | `/analyze-failures` | `/analyze-failures 100` |
-| Fetch llms.txt docs quickly | `/llms-txt` | `/llms-txt nextjs` |
+| Analyze recurring tool failures (default: last 50) | `/analyze-failures` | `/analyze-failures 100` |
+| Fetch llms.txt docs (when Context7 lacks coverage) | `/llms-txt` | `/llms-txt nextjs` |
+
+> **Notes:**
+> - `/compact-phase` does **not** compact automatically. It outputs a `/compact [instructions]` command — copy and run it yourself.
+> - `/review` checks 6 categories: **SEC** (Security) · **TYPE** (Type safety) · **PERF** (Performance) · **LOGIC** (Logic errors) · **STYLE** (Conventions) · **TEST** (Missing tests).
+> - Loading 3+ contexts triggers a warning. Keep it to ≤2 for optimal performance.
 
 ## 2.1 Outcome Navigation (Goal -> Done Signal)
 
@@ -188,6 +196,8 @@ Before stopping:
 /session-save checkout-refactor
 ```
 
+> **Security:** `/session-save` automatically scrubs secrets (API keys, tokens, passwords — 15+ patterns) before writing the session file. No manual sanitization needed.
+
 When returning:
 ```bash
 /session-load --list
@@ -250,6 +260,8 @@ Use when: conversation drift, noisy context, slower output quality.
 /compact-phase deep-planning
 ```
 
+> **How it works:** `/compact-phase` outputs a tailored `/compact [instructions]` command — copy and run it to perform the actual compaction. The system also auto-compacts at 75% context usage (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=75`).
+
 ## 4. Daily Operating Loops
 
 ### A. Standard Development Loop
@@ -277,10 +289,12 @@ Use when: conversation drift, noisy context, slower output quality.
 
 ## 5. Escalation Rules (Operational)
 
+**Cost ratio:** Haiku (1x) · Sonnet (~3x) · Opus (~5x)
+
 - Default execution: `Haiku + /do`
 - Escalate only when needed:
-  1. `/do-sonnet`
-  2. `/do-opus`
+  1. `/do-sonnet` (~3x cost)
+  2. `/do-opus` (~5x cost)
 - Do not stay on high-cost model after the blocker is resolved.
 - Move back to Haiku/Sonnet for routine follow-up work.
 
@@ -340,22 +354,27 @@ If rollback happened during `/do` failure:
 2. Keep intended files.
 3. Remove leftover scratch files manually if needed.
 
-## 9. Scope of This Guide
+## 9. Background System Behaviors
 
-This guide is intentionally operational.
-For strategy evidence and measured data, use:
-- `docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md`
+These hooks run automatically. No commands needed — just know what the messages mean.
 
-## 10. Feature Coverage Checklist
+| Trigger | What Happens | You'll See |
+|---|---|---|
+| Session start | Displays Pro Plan strategy (cost ratios, message targets) | `📊 Pro Plan Strategy: ~45 msg/5h...` |
+| 25 Write/Edit events | Compact advisory | `[COMPACT-ADVISORY] 25 tool calls...` |
+| 50 Write/Edit events | Compact warning | `[COMPACT-WARNING] 50 tool calls...` |
+| 75 Write/Edit events | Compact critical | `[COMPACT-CRITICAL] 75 tool calls...` |
+| 75% context usage | Auto-compact fires (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=75`) | Automatic context reduction |
+| Tool failure (every) | Logged to `~/.claude/logs/tool-failures.log` | Silent (view with `/analyze-failures`) |
+| File edit | Auto-format (prettier / black / gofmt / rustfmt) | Silent |
+| Before `/compact` | Pre-compact hook saves state to `~/.claude/sessions/` | Silent |
+| Session end | Auto-summary saved + secrets scrubbed | Silent |
+| Builder retry cap (2×) | Stops builder subagent, suggests escalation | `RETRY_CAP: 2 consecutive failures detected.` |
 
-All CPMM commands are covered in this guide:
-- `/do`, `/do-sonnet`, `/do-opus`
-- `/plan`, `/dplan`
-- `/review`
-- `/session-save`, `/session-load`
-- `/load-context`
-- `/compact-phase`
-- `/watch`
-- `/learn`
-- `/analyze-failures`
-- `/llms-txt`
+**Optional env settings** (`.claude/settings.json` → `env`):
+
+| Variable | Default | Description |
+|---|---|---|
+| `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` | `75` | Context % threshold for auto-compact |
+| `CLAUDE_SESSION_NOTIFY` | `0` | Set `1` to detect prior sessions on start |
+| `CLAUDE_FAILURE_NOTIFY` | `0` | Set `1` to auto-suggest `/analyze-failures` after 10+ cumulative failures |

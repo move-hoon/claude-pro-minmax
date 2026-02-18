@@ -13,7 +13,7 @@
 - `/review` 결과는 `PASS` 또는 `FAIL`입니다.  
   `PASS`면 진행, `FAIL`이면 수정 후 변경 경로 기준으로 재리뷰합니다.
 - `/do`의 `반복 실패`는 1차 실패 + 2차 실패(재시도 소진)를 뜻하며, 검증 실패도 포함됩니다.
-- 에스컬레이션은 자동이 아니라 수동입니다. CPMM은 다음 커맨드(`/do-sonnet`, `/do-opus`, `/plan`)를 제안하지만 자동 전환하지 않습니다.
+- 에스컬레이션은 자동이 아니라 수동입니다. CPMM은 실패 시 다음 커맨드(`/do-sonnet`, `/plan`)를 제안하지만 자동 전환하지 않습니다.
 - `/do`가 반복 실패하면 `/do-sonnet`, 그래도 막히면 필요한 경우에만 `/do-opus`로 승격합니다.
 - 중요 작업 확인 프롬프트가 뜨면 의도적으로 확인하거나 즉시 중단합니다.
 
@@ -36,25 +36,33 @@
 | 상황 | 사용할 커맨드 | 예시 |
 |---|---|---|
 | 작고 명확한 작업 (1-3 파일) | `/do` | `/do Fix null check in user service and add minimal test.` |
-| 여러 파일 기능 개발 / 구조 판단 필요 | `/plan` | `/plan Add JWT refresh flow with rotation.` |
+| 여러 파일 기능 (4+ 파일) 또는 구조 판단 필요 | `/plan` | `/plan Add JWT refresh flow with rotation.` |
 | 구현 없이 설계안만 필요 | `/plan --no-build` | `/plan --no-build Propose DB migration strategy for billing.` |
-| 깊은 조사/검증 필요 | `/dplan` | `/dplan Analyze race conditions in payment retries.` |
+| 심층 조사 필요 (Sequential Thinking + Perplexity + Context7) | `/dplan` | `/dplan Analyze race conditions in payment retries.` |
 | `/do`가 복잡 로직에서 반복 실패 | `/do-sonnet` | `/do-sonnet Implement conflict-safe cache invalidation.` |
 | Sonnet도 막히거나 매우 중요한 결정 | `/do-opus` | `/do-opus Resolve deadlock risk in transaction coordinator.` |
 | 머지 전 코드 점검 | `/review` | `/review src/auth/` |
 | 보안 중심 점검 | `/review --security` | `/review --security src/auth/` |
 | 작업 중단 전 상태 저장 | `/session-save` | `/session-save auth-refresh` |
-| 이전 작업 재개 | `/session-load` | `/session-load auth-refresh` |
+| 이름 지정하여 이전 작업 재개 | `/session-load` | `/session-load auth-refresh` |
+| 인자 없이 최근 세션 재개 | `/session-load` | `/session-load` |
 | 로드 전 저장 세션 목록 확인 | `/session-load --list` | `/session-load --list` |
-| 단계 전환 시 컨텍스트 정리 | `/compact-phase` | `/compact-phase implementation` |
+| 단계 전환 시 컨텍스트 정리 안내 받기 | `/compact-phase` | `/compact-phase implementation` |
 | 심층 계획 후 컨텍스트 정리 | `/compact-phase deep-planning` | `/compact-phase deep-planning` |
 | 테스트/빌드 장기 모니터링 | `/watch` | `/watch tests` |
 | 사용자 지정 장기 명령 모니터링 | `/watch custom` | `/watch custom \"pnpm test:e2e --watch\"` |
+| 컨텍스트 템플릿 로드 (≤2개 권장) | `/load-context` | `/load-context backend` |
 | 저장된 세션 컨텍스트 로드 | `/load-context session` | `/load-context session` |
-| 반복 패턴 저장 | `/learn` | `/learn "Use DTO mappers for API responses"` |
+| 세션 자동 분석으로 패턴 추출 | `/learn` | `/learn` |
+| 특정 패턴 직접 저장 | `/learn` | `/learn "Use DTO mappers for API responses"` |
 | 저장된 패턴 목록 확인 | `/learn --show` | `/learn --show` |
-| 도구 실패 패턴 분석 | `/analyze-failures` | `/analyze-failures 100` |
-| llms.txt 문서 빠르게 조회 | `/llms-txt` | `/llms-txt nextjs` |
+| 도구 실패 패턴 분석 (기본: 최근 50건) | `/analyze-failures` | `/analyze-failures 100` |
+| llms.txt 문서 조회 (Context7 미지원 시 보조) | `/llms-txt` | `/llms-txt nextjs` |
+
+> **참고:**
+> - `/compact-phase`는 자동으로 압축하지 **않습니다**. `/compact [instructions]` 명령을 출력하므로, 이를 복사하여 직접 실행하세요.
+> - `/review`는 6가지 카테고리를 검사합니다: **SEC** (보안) · **TYPE** (타입 안전) · **PERF** (성능) · **LOGIC** (로직 오류) · **STYLE** (컨벤션) · **TEST** (누락 테스트).
+> - 컨텍스트를 3개 이상 로드하면 경고가 표시됩니다. 최적 성능을 위해 ≤2개로 유지하세요.
 
 ## 2.1 목표별 네비게이션 (목표 -> 완료 신호)
 
@@ -188,6 +196,8 @@ tmux 기본 제어:
 /session-save checkout-refactor
 ```
 
+> **보안:** `/session-save`는 세션 파일 작성 전에 API 키, 토큰, 비밀번호 등 15+ 패턴의 시크릿을 자동으로 제거합니다. 수동 정리가 필요 없습니다.
+
 재개 시:
 ```bash
 /session-load --list
@@ -249,6 +259,8 @@ tmux 기본 제어:
 # 또는
 /compact-phase deep-planning
 ```
+
+> **동작 방식:** `/compact-phase`는 자동으로 압축하지 않습니다. 맞춤형 `/compact [instructions]` 명령을 출력하므로, 이를 복사하여 직접 실행하세요. 시스템은 75% 컨텍스트 도달 시 자동 압축도 수행합니다 (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=75`).
 
 ## 4. 일상 운영 루프
 
@@ -340,22 +352,27 @@ tmux 기본 제어:
 2. 유지할 파일과 정리할 파일 분리
 3. 필요 없는 임시 파일은 수동 정리
 
-## 9. 문서 범위
+## 9. 백그라운드 시스템 동작
 
-이 문서는 운영 실행에만 집중합니다.
-전략 근거와 계측 데이터는 아래 문서를 확인하세요.
-- `docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md`
+아래 훅은 자동 실행됩니다. 별도 명령 불필요 — 표시되는 메시지의 의미만 알아두세요.
 
-## 10. 기능 커버리지 체크리스트
+| 트리거 | 동작 | 표시 메시지 |
+|---|---|---|
+| 세션 시작 | Pro Plan 전략 요약 표시 (비용 비율, 메시지 목표) | `📊 Pro Plan Strategy: ~45 msg/5h...` |
+| Write/Edit 25회 | 컴팩트 안내 (advisory) | `[COMPACT-ADVISORY] 25 tool calls...` |
+| Write/Edit 50회 | 컴팩트 경고 (warning) | `[COMPACT-WARNING] 50 tool calls...` |
+| Write/Edit 75회 | 컴팩트 긴급 (critical) | `[COMPACT-CRITICAL] 75 tool calls...` |
+| 컨텍스트 75% 도달 | 자동 컴팩트 발동 (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=75`) | 자동 컨텍스트 축소 |
+| 도구 실패 (매회) | `~/.claude/logs/tool-failures.log`에 기록 | 무음 (`/analyze-failures`로 확인) |
+| 파일 편집 | 자동 포맷 실행 (prettier / black / gofmt / rustfmt) | 무음 |
+| `/compact` 실행 전 | 사전 컴팩트 훅이 현재 상태를 `~/.claude/sessions/`에 저장 | 무음 |
+| 세션 종료 | 자동 요약 저장 + 시크릿 제거 | 무음 |
+| 빌더 재시도 한도 (2×) | 빌더 서브에이전트 중단, 에스컬레이션 제안 | `RETRY_CAP: 2 consecutive failures detected.` |
 
-이 가이드는 CPMM 커맨드 전체를 포함합니다:
-- `/do`, `/do-sonnet`, `/do-opus`
-- `/plan`, `/dplan`
-- `/review`
-- `/session-save`, `/session-load`
-- `/load-context`
-- `/compact-phase`
-- `/watch`
-- `/learn`
-- `/analyze-failures`
-- `/llms-txt`
+**선택적 환경 변수** (`.claude/settings.json` → `env`):
+
+| 변수 | 기본값 | 설명 |
+|---|---|---|
+| `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` | `75` | 자동 컴팩트 발동 컨텍스트 % 임계값 |
+| `CLAUDE_SESSION_NOTIFY` | `0` | `1`로 설정 시 세션 시작 때 이전 세션 자동 감지 |
+| `CLAUDE_FAILURE_NOTIFY` | `0` | `1`로 설정 시 누적 실패 10건 이상에서 `/analyze-failures` 자동 권유 |
