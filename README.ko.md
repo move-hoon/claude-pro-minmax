@@ -11,6 +11,8 @@
 
 Pro Plan 제약에 최적화된 Claude Code 설정입니다.
 
+> **설치 완료했다면 여기서 시작하세요: [사용자 가이드](docs/USER-MANUAL.ko.md)**
+
 ---
 
 > [!TIP]

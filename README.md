@@ -11,6 +11,8 @@
 
 A Claude Code configuration optimized for Pro Plan constraints.
 
+> **Already installed? Start here: [User Guide](docs/USER-MANUAL.md)**
+
 ---
 
 > [!TIP]
