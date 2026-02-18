@@ -5,6 +5,8 @@
 ## 목적
 일반적인 워크플로우를 위한 슬래시 커맨드(slash command) 정의를 포함합니다.
 
+> **경로 안내:** 명령어/에이전트 프롬프트에는 설치 경로(`~/.claude/...`)가 사용됩니다. 이 저장소의 소스 경로는 `./.claude/...`, `./scripts/...`입니다.
+
 ## 내용
 
 | 커맨드 | 목적 | 주요 기능 |
@@ -13,7 +15,7 @@
 | `do-sonnet.md` | Sonnet으로 실행 | context: fork, model: sonnet |
 | `do-opus.md` | Opus로 실행 | context: fork, model: opus |
 | `plan.md` | 복잡한 작업 | @planner → @builder 체인 |
-| `dplan.md` | 심층 계획 | @dplanner (Sequential Thinking + Perplexity) |
+| `dplan.md` | 심층 계획 | @dplanner (Sequential Thinking + Perplexity + Context7) |
 | `review.md` | 코드 검토 | 읽기 전용, 카테고리 |
 | `learn.md` | 패턴 캡처 | 자동 추출 또는 명시적 지정 |
 | `session-save.md` | 상태 저장 | 비밀 정보 삭제 |
@@ -29,7 +31,7 @@
 ### 실행 명령어
 | 명령어 | 사용 시점 | 리소스 사용량 |
 |---------|-------------|--------------|
-| `/do` | 단순~중간 작업 (1-3 파일). 원자적 배치 실행, 실패 시 롤백 | 최소 (Haiku 4.5 기본) |
+| `/do` | 단순~중간 작업 (1-3 파일). 원자적 배치 실행, 실패 시 롤백 | 최소 (세션 모델) |
 | `/do-sonnet` | 깊은 추론이 필요한 복잡한 로직 | 중간 (Sonnet 4.5) |
 | `/do-opus` | 중요한 결정, Sonnet 실패 시 | 높음 (Opus 4.6—API 가격이 비용 반영) |
 | `/plan` | 다중 파일 작업, 아키텍처 결정 | 중간 (Sonnet 4.5 → Haiku 4.5 체인) |
@@ -74,7 +76,7 @@
 # 2. 구현 후 검토
 /review src/services/user-service.ts
 ```
-**Quota:** 낮음 (Haiku 4.5 실행 + Haiku 4.5 검토)
+**Quota:** 낮음 (세션 모델 실행 + Haiku 4.5 검토)
 
 ### 복잡한 기능 구현
 ```bash
@@ -136,21 +138,21 @@
 
 | 측면 | /do | /do-sonnet | /do-opus | /plan | /dplan |
 |--------|-----|------------|----------|-------|--------|
-| **모델** | Haiku 4.5 (기본) | Sonnet 4.5 | Opus 4.6 | Sonnet 4.5 → Haiku 4.5 | Sonnet 4.5 + MCP |
-| **비용** | 1x | ~3x | ~5x | ~6x | ~10-15x |
+| **모델** | 세션 모델 | Sonnet 4.5 | Opus 4.6 | Sonnet 4.5 → Haiku 4.5 | Sonnet 4.5 + MCP |
+| **상대 비용** | 낮음 | 중간 | 높음 | 중상 | 최고 |
 | **계획** | 내부 (배치) | 내부 (배치) | 내부 (배치) | 아키텍처 설계 | 심층 연구 |
 | **사용 사례** | 간단한 작업 | 복잡한 로직 | 중요한 결정 | 다중 파일 기능 | 미지의 영역 |
-| **영향받는 파일** | 1-2 | 1-3 | 제한없음 | 5+ | 제한없음 |
+| **영향받는 파일** | 1-3 | 1-3 | 제한없음 | 5+ | 제한없음 |
 | **질문** | 불가 | 불가 | 불가 | ≤3 (기본값 포함) | 무제한 |
 | **연구 도구** | 불가 | 불가 | 불가 | 불가 | 가능 (Perplexity, Context7) |
 
 **결정 트리:**
 ```
 작업 복잡도
-├─ 간단함 (1-2 파일, 명확한 요구사항)
+├─ 간단함 (1-3 파일, 명확한 요구사항)
 │   └─→ /do
 │
-├─ 중간 (3-5 파일, 약간의 복잡도)
+├─ 중간 (4-5 파일, 약간의 복잡도)
 │   ├─ 로직 중심 → /do-sonnet
 │   └─ 다중 파일 → /plan
 │
@@ -186,7 +188,7 @@
 
 **`/do` 사용 시점:**
 - 명확한 요구사항이 있는 잘 정의된 작업
-- 1-2개 파일에만 영향
+- 1-3개 파일에만 영향
 - 아키텍처 결정 불필요
 - 예: "사용자 입력에 유효성 검사 추가"
 
@@ -320,7 +322,7 @@
 
 | 결정 | 근거 |
 |------|------|
-| `/do-sonnet`과 `/do-opus`를 별도 커맨드로 분리 | Frontmatter `model:` 필드는 `context: fork`와 함께만 동작함. 서브에이전트를 통한 실제 모델 전환 보장 |
+| `/do-sonnet`과 `/do-opus`를 별도 커맨드로 분리 | Frontmatter `model:` 필드는 `context: fork`와 함께만 동작함. 의도한 서브에이전트 모델로 라우팅하려면 별도 커맨드가 필요 |
 | `/plan`은 `agent: planner`, `/review`는 `agent: reviewer` 사용 | 이 커맨드들은 특정 도구 제한이 필요함. `planner`는 읽기 전용(Write/Edit 불가). `reviewer`도 읽기 전용. `agent:` 필드가 해당 에이전트의 tools/permissions를 적용 |
 | `/load-context`의 `disable-model-invocation: false` | Claude가 이 커맨드를 자동 호출할 수 있으려면 `false`여야 함. `true`면 Read tool로 컨텍스트 파일 로드 불가 |
 | `/compact-phase`는 안내만 제공 | Claude Code의 `/compact`는 사용자 입력 필요. 이 커맨드는 단계별 프롬프트를 복사-붙여넣기 할 수 있도록 안내 |

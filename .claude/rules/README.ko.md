@@ -37,7 +37,7 @@ Claude가 항상 따르는 규칙들을 포함합니다. 이 규칙들은 모든
 | 결정 | 근거 |
 |------|------|
 | 규칙 파일에 frontmatter 없음 | `critical-actions.md`와 `security.md` 같은 규칙은 의도적으로 전역 적용. `paths` 제한 불필요 |
-| `critical-actions.md`를 순수 마크다운으로 | 훅 기반 차단(`critical-action-check.sh`)이 실제 강제를 담당. 규칙 파일은 Claude 이해를 위한 문서 |
+| `critical-actions.md`를 순수 마크다운으로 | 훅 기반 차단(`~/.claude/scripts/hooks/critical-action-check.sh`)이 실제 강제를 담당. 규칙 파일은 Claude 이해를 위한 문서 |
 | `security.md`를 `critical-actions.md`에서 분리 | Critical actions = 위험 명령어 차단. Security = 코딩 모범 사례. 목적이 다름 |
 
 ## 사용법

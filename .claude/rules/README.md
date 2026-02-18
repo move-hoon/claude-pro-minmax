@@ -37,7 +37,7 @@ The most important rule file. Defines:
 | Decision | Rationale |
 |----------|-----------|
 | No frontmatter in rule files | Rules like `critical-actions.md` and `security.md` are intentionally global. No `paths` restriction needed |
-| `critical-actions.md` as plain markdown | Hook-based blocking (`critical-action-check.sh`) handles enforcement. Rule file is documentation for Claude's understanding |
+| `critical-actions.md` as plain markdown | Hook-based blocking (`~/.claude/scripts/hooks/critical-action-check.sh`) handles enforcement. Rule file is documentation for Claude's understanding |
 | Separate `security.md` from `critical-actions.md` | Critical actions = blocking dangerous commands. Security = coding best practices. Different purposes |
 
 ## Usage
@@ -96,4 +96,3 @@ What this rule enforces.
 Project rules have **higher priority**. If a project rule file has the same name as a user rule file (e.g., `code-style.md`), the project version completely replaces the user version.
 
 Project rules can override global rules if they have the same filename.
-

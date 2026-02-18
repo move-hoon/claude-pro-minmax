@@ -7,13 +7,15 @@
 
 **철학:** "코드로 할 수 있는 것을 프롬프트하지 마세요."
 
+> **경로 안내:** 이 저장소에서는 `scripts/` 아래에 있으며, 설치 후 실행 경로는 `~/.claude/scripts/`입니다.
+
 ## 유니버설 스크립트
 
 | 스크립트 | 목적 | 이점 |
 |--------|---------|---------|
 | `verify.sh` | 런타임 적응형 검증 (빌드+테스트+린트) | 결정론적 실행, 프롬프팅 불필요 |
 | `build.sh` | 런타임 적응형 빌드 | 런타임 자동 감지, 모델 추측 제거 |
-| `test.sh` | 런타임 적응형 테스트 | 직접 실행, 100% 정확도 |
+| `test.sh` | 런타임 적응형 테스트 | 런타임별 명령을 직접 실행 |
 | `lint.sh` | 런타임 적응형 린트 | 로컬 처리, 즉각적 결과 |
 
 ## 런타임 감지 레이어
@@ -52,7 +54,9 @@ runtime/
 | `hooks/notification.sh` | Notification | 데스크톱 알림 | 로컬 (무료) |
 | `hooks/session-start.sh` | SessionStart | 환경변수 설정 + 예산 알림 + 세션 알림 | 로컬 (무료), 예산 컨텍스트 ~40 입력 토큰 |
 | `hooks/session-cleanup.sh` | SessionEnd | 세션에서 비밀 정보 제거 | 로컬 (무료) |
+| `hooks/pre-compact.sh` | PreCompact | 컴팩트 전 상태 저장 | 로컬 (무료) |
 | `hooks/retry-check.sh` | Stop | 연속 2회 실패 시 차단 (builder) | 로컬 (무료), 에스컬레이션 메시지 |
+| `hooks/stop-collect-context.sh` | Stop | 중단 시 실패 컨텍스트 수집 (선택) | 로컬 (무료) |
 | `hooks/readonly-check.sh` | PreToolUse | 읽기 전용 (reviewer) | 로컬 (무료), 차단 시 메시지 |
 | `hooks/tool-failure-log.sh` | PostToolUseFailure | 도구 실패 로깅 | 로컬 (무료) |
 
@@ -121,10 +125,10 @@ cat session.md | node scrub-secrets.js > clean.md
 
 ## 왜 스크립트인가요?
 
-| 접근 방식 | 실행 비용 | 정확도 | 속도 |
+| 접근 방식 | 실행 비용 | 신뢰성 | 속도 |
 |----------|----------|----------|-------|
 | Claude 프롬프트 | Quota 소비 | 모델 의존적 | API 왕복 필요 |
-| 쉘 스크립트 | 로컬 (무료) | 결정론적 (100%) | 즉시 |
+| 쉘 스크립트 | 로컬 (무료) | 규칙 기반 반복 실행 가능 | 즉시 |
 
 **장점:** 스크립트는 결정론적 작업을 quota 소비 없이 로컬에서 처리하여, Claude가 창의적/추론 작업에 집중할 수 있게 합니다.
 
@@ -141,5 +145,6 @@ set -e  # 오류 발생 시 종료
 
 실행 가능하게 만들기:
 ```bash
-chmod +x ~/.claude/scripts/my-script.sh
+chmod +x scripts/my-script.sh
+# 설치 경로: chmod +x ~/.claude/scripts/my-script.sh
 ```

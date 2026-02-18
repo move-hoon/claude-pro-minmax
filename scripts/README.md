@@ -7,13 +7,15 @@ Contains deterministic scripts for operations that shouldn't be "prompted" - the
 
 **Philosophy:** "Don't prompt what you can code."
 
+> **Path note:** In this repository, scripts live under `scripts/`. After installation, they run from `~/.claude/scripts/`.
+
 ## Universal Scripts
 
 | Script | Purpose | Benefit |
 |--------|---------|---------|
 | `verify.sh` | Runtime-adaptive verification (build+test+lint) | Deterministic execution, no prompting needed |
 | `build.sh` | Runtime-adaptive build | Auto-detects runtime, eliminates model guessing |
-| `test.sh` | Runtime-adaptive test | Direct execution, 100% accuracy |
+| `test.sh` | Runtime-adaptive test | Direct execution with runtime-specific commands |
 | `lint.sh` | Runtime-adaptive lint | Local processing, instant results |
 
 ## Runtime Detection Layer
@@ -52,7 +54,9 @@ runtime/
 | `hooks/notification.sh` | Notification | Desktop alerts | Local (zero) |
 | `hooks/session-start.sh` | SessionStart | Env setup + budget reminder + session notify | Local (zero), ~40 input tokens for budget context |
 | `hooks/session-cleanup.sh` | SessionEnd | Scrub secrets from sessions | Local (zero) |
+| `hooks/pre-compact.sh` | PreCompact | Save state before compaction | Local (zero) |
 | `hooks/retry-check.sh` | Stop | 2-retry cap (builder) | Local (zero), escalation message if triggered |
+| `hooks/stop-collect-context.sh` | Stop | Collect failure context on interruption (optional) | Local (zero) |
 | `hooks/readonly-check.sh` | PreToolUse | Read-only (reviewer) | Local (zero), blocking message if triggered |
 | `hooks/tool-failure-log.sh` | PostToolUseFailure | Log tool failures | Local (zero) |
 
@@ -121,10 +125,10 @@ cat session.md | node scrub-secrets.js > clean.md
 
 ## Why Scripts?
 
-| Approach | Execution Cost | Accuracy | Speed |
+| Approach | Execution Cost | Reliability | Speed |
 |----------|---------------|----------|-------|
 | Prompt Claude | Consumes quota | Model-dependent | Requires API round-trip |
-| Shell script | Local (zero) | Deterministic (100%) | Instant |
+| Shell script | Local (zero) | Rule-based and repeatable | Instant |
 
 **Advantage:** Scripts handle deterministic operations locally without consuming quota, freeing Claude to focus on creative/reasoning tasks.
 
@@ -141,6 +145,6 @@ set -e  # Exit on error
 
 Make executable:
 ```bash
-chmod +x ~/.claude/scripts/my-script.sh
+chmod +x scripts/my-script.sh
+# Installed path: chmod +x ~/.claude/scripts/my-script.sh
 ```
-

@@ -5,6 +5,8 @@
 ## 목적
 모델 최적화와 역할 기반 작업 분담을 위한 서브에이전트 정의를 포함합니다.
 
+> **경로 안내:** 프롬프트 예시에는 설치 경로(`~/.claude/...`)가 사용됩니다. 이 저장소 기준 경로는 `./.claude/...`, `./scripts/...`입니다.
+
 ## 내용
 
 | 에이전트 | 모델 | 역할 | 도구 | 질문 |
@@ -50,7 +52,7 @@
 - 명확히 정의된 간단한 작업 (직접 `/do`)
 - 명확한 재현이 가능한 버그 수정
 
-**실행:** `/do [작업]`, `/plan` 위임, `/dplan` 위임
+**실행:** `/plan` 위임, `/dplan` 위임, 직접 `@builder [작업]` 호출
 
 **프로토콜:**
 - 최대 2회 재시도 → 실패 시 에스컬레이션
@@ -63,7 +65,7 @@
 - `/do*` 경유 시: `~/.claude/scripts/snapshot.sh push`로 depth guard 포함 라벨 스냅샷 생성
 - 성공 시: `~/.claude/scripts/snapshot.sh drop` (라벨 확인, 스냅샷 없으면 안전한 no-op)
 - 실패 시: `~/.claude/scripts/snapshot.sh pop` (라벨 확인, 없으면 `git checkout .` 폴백)
-- dirty state로 인한 수동 정리 2-4 메시지 낭비 방지
+- dirty state로 인한 수동 정리 턴 증가를 방지 (2-4 메시지 절약은 추정치)
 
 ### @reviewer (코드 검토)
 **사용 시점:**
@@ -97,24 +99,32 @@ flowchart TD
     Spec --> UserAppr{User\nApprove?}
     UserAppr -- No --> Cmd
     
-    %% Branch 2: Execution (Direct or Approved)
+    %% Branch 2a: /plan Execution (Approved → @builder)
     subgraph Execution ["Phase 2: Implementation"]
         direction TB
         UserAppr -- Yes --> Builder[/"@builder (Haiku 4.5)"/]
-        Cmd -->|/do| Snap["git stash"]
-        Snap --> Builder
-        
+
         %% Safe Execution Loop
         Builder --> Verify{Verify?}
         Verify -- "Retry (<2)" --> Builder
     end
-    
+
+    %% Branch 2b: /do Direct Execution (Session Model)
+    Cmd -->|/do| Snap["git stash"]
+    Snap --> Exec["Session Model (Direct)"]
+    Exec --> VerifyDo{Verify?}
+    VerifyDo -- "Retry (<2)" --> Exec
+    VerifyDo -->|Success| DropDo["git stash drop"]
+    DropDo --> Done
+    VerifyDo -- "Fail (x2)" --> PopDo["git stash pop"]
+    PopDo --> EscalateDo(STOP & Suggest)
+
     %% Branch 3: Escalation (Model Upgrade)
     Verify -- "Fail (x2)" --> Pop["git stash pop"]
     Pop --> Escalate(STOP & Suggest)
-    Escalate -.->|"/do-sonnet"| SonnetExec[/"@builder (Sonnet 4.5)"/]
+    Escalate -.->|"/do-sonnet"| SonnetExec["Sonnet 4.5 (Direct)"]
     SonnetExec --> Verify
-    
+
     %% Branch 4: Completion
     Verify -->|Success| Drop["git stash drop"]
     Drop --> Reviewer[/"@reviewer"/]
@@ -125,10 +135,12 @@ flowchart TD
     classDef logic fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
     classDef term fill:#e0f2f1,stroke:#00695c,stroke-width:2px;
     classDef fail fill:#ffebee,stroke:#c62828,stroke-width:2px,stroke-dasharray: 5 5;
-    
-    class Planner,DPlanner,Builder,Reviewer,SonnetExec,Snap,Pop,Drop agent;
-    class Cmd,Verify,UserAppr logic;
-    class Start,Done,Escalate term;
+    classDef direct fill:#fff9c4,stroke:#f9a825,stroke-width:2px;
+
+    class Planner,DPlanner,Builder,Reviewer,Snap,Pop,Drop,SnapDo,PopDo,DropDo agent;
+    class Cmd,Verify,VerifyDo,UserAppr logic;
+    class Start,Done,Escalate,EscalateDo term;
+    class Exec,SonnetExec direct;
 ```
 
 
@@ -144,7 +156,7 @@ flowchart TD
 | @reviewer 읽기 전용 강제 | Hook 기반 차단(`readonly-check.sh`). 검토 중 실수로 수정하는 것 방지 |
 | @dplanner에 MCP 도구 제공 | 연구가 많은 작업은 MCP 오버헤드 정당화 가능. `sequential-thinking` + `perplexity` + `context7`로 실패 없는 계획 가능 |
 | 에이전트별 출력 예산 | Output은 Input의 5배 비용 (API 가격). 엄격한 예산: builder 5줄, reviewer 1줄 PASS / 30줄 FAIL, dplanner 60줄, planner 1문장/작업 |
-| @builder 원자적 롤백 | `~/.claude/scripts/snapshot.sh`가 depth guard + 라벨 확인 포함 `git stash` 처리. 무관한 사용자 stash pop 방지. 실패 시 `pop` (또는 clean tree에서 `git checkout .`) → 즉시 에스컬레이션 가능한 깨끗한 상태. 실패당 2-4 메시지 절약, API 비용 0 |
+| @builder 원자적 롤백 | `~/.claude/scripts/snapshot.sh`가 depth guard + 라벨 확인 포함 `git stash` 처리. 무관한 사용자 stash pop 방지. 실패 시 `pop` (또는 clean tree에서 `git checkout .`) → 즉시 에스컬레이션 가능한 깨끗한 상태. 실패당 2-4 메시지 절약은 추정치이며, API 비용은 0 |
 
 ## 커스텀 에이전트 추가
 

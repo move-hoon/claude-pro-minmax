@@ -7,7 +7,7 @@
 
 # Claude Pro MinMax (CPMM)
 
-> **Minimum Tokens, Maximum Intelligence. Optimize every token within Pro Plan's constraints.**
+> **Minimize token waste, maximize useful work per quota window.**
 
 A Claude Code configuration optimized for Pro Plan constraints.
 
@@ -15,9 +15,9 @@ A Claude Code configuration optimized for Pro Plan constraints.
 
 > [!TIP]
 > **🚀 3-Second Summary: Why use this?**
-> 1.  **Batch + Cheap Model:** `/do` sends ONE message to **Haiku 4.5 (1/5 Opus 4.6 cost)** — plan+build+verify in a single response.
-> 2.  **Output Tax Awareness:** Agent response budgets + CLI filtering cut output tokens (which cost **5x** input).
-> 3.  **Zero-Cost Safety:** **11 local hooks** + **atomic rollback** — all enforcement happens locally, zero API cost.
+> 1.  **Batch Execution:** Use `/do` to keep implementation and verification in one flow, and escalate to `/do-sonnet`/`/do-opus` only when needed.
+> 2.  **Output Cost Control:** Use response budgets and CLI filtering to reduce unnecessary output tokens.
+> 3.  **Local Safety Rails:** Local hooks and atomic rollback help you recover quickly on failure.
 
 ---
 
@@ -29,6 +29,7 @@ npm install -g @anthropic-ai/claude-code
 npm install -g @mixedbread/mgrep
 mgrep install-claude-code
 brew install jq   # macOS (Linux: sudo apt-get install jq)
+brew install tmux # optional: required for /watch (Linux: sudo apt-get install tmux)
 ```
 
 ### 2. One-Line Install
@@ -36,7 +37,15 @@ brew install jq   # macOS (Linux: sudo apt-get install jq)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/move-hoon/claude-pro-minmax/main/install.sh)"
 ```
 
-### 3. Post-Install Configuration (Optional)
+### 3. Manual Install
+```bash
+git clone https://github.com/move-hoon/claude-pro-minmax.git
+cd claude-pro-minmax
+less install.sh
+bash install.sh
+```
+
+### 4. Post-Install Configuration (Optional)
 **The installation script will ask for your Perplexity API Key and output language.**
 If you skipped language selection, you can configure it manually:
 - **Non-English:** Create `~/.claude/rules/language.md` with your preferred language
@@ -61,8 +70,8 @@ If you skipped Perplexity setup during installation, you can set it up manually:
 
 > **Note:** The installation script automatically backs up your existing `~/.claude` settings (`~/.claude-backup-{timestamp}`).
 
-### 4. Project Initialization
-> **Tip:** Before running `claude`, set up `.claude/CLAUDE.md` and `.claude/settings.json` by referencing the templates in `~/.claude/project-templates/`. This ensures optimizations are active from the start.
+### 5. Project Initialization
+> **Tip:** Before running `claude`, initialize your project by referencing templates in this repository's `project-templates/` directory. (`install.sh` does not copy `project-templates` into `~/.claude`.)
 
 ---
 
@@ -70,7 +79,7 @@ If you skipped Perplexity setup during installation, you can set it up manually:
 
 ### 🤖 Agent Workflow
 
-CPMM automatically moves between Sonnet 4.5 (Design) and Haiku 4.5 (Implementation) based on task complexity to achieve optimal efficiency.
+CPMM provides layered model routing: `/plan` chains @planner (Sonnet 4.5) → @builder (Haiku 4.5) for complex tasks, while `/do` executes directly in the current session model for speed.
 
 ```mermaid
 flowchart LR
@@ -79,11 +88,13 @@ flowchart LR
     Cmd -->|/plan| Plan[/"@planner (Sonnet 4.5)"/]
     Cmd -->|/do| Snap["📸 git stash push"]
 
-    Snap --> Build[/"@builder (Haiku 4.5)"/]
-    Plan -->|Blueprint| Build
-    Build -- "Success" --> Drop["🗑️ git stash drop"]
+    Snap --> Exec["Session Model (Direct)"]
+    Plan -->|Blueprint| Build[/"@builder (Haiku 4.5)"/]
+    Exec -- "Success" --> Drop["🗑️ git stash drop"]
+    Build -- "Success" --> Drop
     Drop --> Review[/"@reviewer (Haiku 4.5)"/]
-    Build -- "Failure (2x)" --> Pop["⏪ git stash pop"]
+    Exec -- "Failure (2x)" --> Pop["⏪ git stash pop"]
+    Build -- "Failure (2x)" --> Pop
     Pop --> Escalate("🚨 Escalate to Sonnet 4.5")
 
     Review --> Done([Done])
@@ -95,6 +106,7 @@ flowchart LR
     classDef escalate fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px;
     classDef done fill:#e0e0e0,stroke:#9e9e9e,stroke-width:2px,font-weight:bold;
     classDef snapshot fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px;
+    classDef direct fill:#fff9c4,stroke:#f9a825,stroke-width:2px;
 
     class Plan planner;
     class Build builder;
@@ -102,6 +114,7 @@ flowchart LR
     class Escalate escalate;
     class Done done;
     class Snap,Drop,Pop snapshot;
+    class Exec direct;
 ```
 
 ### ⌨️ Command Guide
@@ -112,9 +125,11 @@ Essential commands used most frequently.
 
 | Command | Description | Recommended Situation |
 | --- | --- | --- |
-| `/do [task]` | Rapid implementation with **Haiku 4.5** | Simple bug fixes, script writing |
+| `/do [task]` | Rapid implementation (session model) | Simple bug fixes, script writing |
 | `/plan [task]` | **Sonnet 4.5** Design → **Haiku 4.5** Implementation | Feature additions, refactoring, complex logic |
 | `/review [target]` | **Haiku 4.5** (Read-only) | Code review (Specify file or directory) |
+
+> **Cost Optimization Tip:** Set your session model to Haiku (`/model haiku`) before using `/do` for simple tasks — same **1/5 API input-token price** as @builder. Use `/do-sonnet` or `/plan` for complex tasks.
 
 <details>
 <summary><strong>🚀 Advanced Commands - Click to Expand</strong></summary>
@@ -134,7 +149,7 @@ Full command list for more sophisticated tasks or session management.
 | `/load-context` | Load context templates | Initial setup for frontend/backend |
 | **🛠️ Utility** | | |
 | `/learn` | Learn and save patterns | Registering frequently recurring errors or preferred styles |
-| `/analyze-failures`| Analyze error logs | Identifying causes of recurring errors |
+| `/analyze-failures` | Analyze error logs | Identifying causes of recurring errors |
 | `/watch` | Process monitoring (tmux) | Observing long-running builds/tests |
 | `/llms-txt` | Fetch documentation | Loading official library docs in LLM format |
 
@@ -145,181 +160,21 @@ Full command list for more sophisticated tasks or session management.
 ## Core Strategy
 
 > [!NOTE]
-> Anthropic's exact Quota algorithm is private. This configuration optimizes based on **API pricing and verified cost factors**; actual results may vary depending on task complexity.
->
-> **Verified evidence:**
-> - **Official Docs**: *"Content in projects is cached and doesn't count against your limits when reused"* ([source](https://support.claude.com/en/articles/9797557-usage-limit-best-practices))
-> - **Usage Factors**: *"length, complexity, features, and model"* ([source](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits))
-> - **Community**: Significant model-specific quota differences reported ([GitHub #9094](https://github.com/anthropics/claude-code/issues/9094))
+> Anthropic does not publish the exact Pro quota formula. This README focuses on practical operating rules you can use immediately. For archived experiment evidence backing this strategy, see [docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md).
 
-Claude Pro Plan has constraints that fundamentally change how you should use Claude Code:
+### Goal
 
-- **5-Hour Rolling Reset**: Usage resets every 5 hours, encouraging short and focused sessions.
-- **Message-Based Quota (Length-Sensitive)**: As the conversation gets longer (as context accumulates), the quota deducted per message increases exponentially. ([Claude Help Center](https://support.anthropic.com/en/articles/8325606-what-is-claude-pro))
-- **Weekly Limits**: Additional weekly caps are applied to heavy users.
+**Maximize useful work per quota window** by minimizing quota per validated task.
 
-Without optimization, default Claude Code usage on the Pro Plan burns through quota fast — expensive models for simple tasks, verbose outputs, and unnecessary message round-trips all drain your 5-hour budget.
+### Operating Principles
 
-CPMM solves each of these:
-
-| Pro Plan Challenge | CPMM Solution |
-|---|---|
-| Opus 4.6 burns quota on simple tasks | **Haiku 4.5 default** (1/5 the cost) — escalate only when needed |
-| Output costs 5x input tokens | **Agent response budgets** (builder: 5 lines, reviewer: 1 line PASS) |
-| Multi-step pipelines waste messages | **Batch `/do`** — plan+build+verify in ONE response (user sends 1 msg, gets 1 response vs 6+ round-trips) |
-| Context grows → each message costs more | **3-tier compact warnings** (25/50/75) + auto-compact at 75% |
-| Failed execution leaves dirty state | **Atomic rollback** (`git stash` snapshot → clean restore on failure) |
-| Hooks/scripts consume API calls | **11 local hooks** — all enforcement runs locally at zero API cost |
-
-### 1. Goal
-**Maximize session sustainability within Pro Plan's 5-hour Quota window.**
-
-This configuration is designed to extend productive work time by reducing Quota consumption per task. The goal is not "limit bypass," but **resource efficiency optimization** to work longer without exhausting the allocation.
-
-### 2. Approach
-While Anthropic hasn't disclosed the exact algorithm, Quota consumption is affected by the following factors. This project optimizes all of them through one principle:
-
-> **Maximum Value Per Message**
-
-* **Model Cost (Primary — 5x):** Haiku 4.5 costs 1/5 of Opus 4.6 ($1 vs $5 /MTok input). Use the cheapest model that can do the job.
-* **Output Tokens (High Impact — 5x):** Output costs 5x Input (API pricing). Strict response budgets on every agent.
-* **Message Count (Direct):** Fewer messages = less quota. Batch operations (plan+build+verify) in a single `/do` call.
-* **CLI Filtering:** `mgrep` reduces tool output by ~50% ([benchmark verified](https://x.com/affaanmustafa/status/2014040193557471352)). `jq` minimizes unnecessary fields from structured output.
-
-### 3. Execution Strategy: Value-First Workflow
-
-1.  **Default: Batch Execution (`/do`)**
-    * Simple tasks (1-3 files): `/do` handles plan+build+verify in one shot.
-    * No planner overhead. No human confirmation between phases.
-    * **Result: 2 messages** (user request + Claude response) vs 6+ with sequential pipeline.
-
-2.  **Optional: Sequential Pipeline (`/plan`)**
-    * Medium-to-complex tasks (4+ files): `/plan` → `@builder` → `@reviewer`.
-    * Use when you need human checkpoints between phases.
-    * Use when the planning step itself requires validation before building.
-
-3.  **Cost Minimization per Task**
-    * `@builder` (Haiku 4.5): Handles implementation ($1/MTok — 1/5 of Opus 4.6).
-    * `@planner` (Sonnet 4.5): Architecture design ($3/MTok — balanced capability and cost).
-    * **Opus 4.6**: Escalation only ($5/MTok) — explicit `/do-opus` makes cost visible.
-
-4.  **Safe Escalation Path (Safety Ladder)**
-    * Haiku 4.5 failure (after 2 retries) → Escalate to Sonnet 4.5 (`/do-sonnet`).
-    * Sonnet 4.5 failure → Escalate to Opus 4.6 (`/do-opus`).
-    * Makes cost apparent through explicit model selection.
-
-5.  **Atomic Rollback (Failure Recovery)**
-    * `/do`, `/do-sonnet`, `/do-opus` create a `git stash` snapshot before execution.
-    * On success: snapshot is dropped (zero overhead).
-    * On failure (after 2 retries): `git stash pop` restores pre-execution state.
-    * **Benefit**: Clean state for immediate escalation — no manual cleanup, saving **2-4 messages per failure**.
-
----
-
-## 📊 Results and Comparison
-
-**What this configuration enables:**
-
-- ✅ Significantly longer sessions through model cost optimization (Haiku 4.5 = 1/5 Opus 4.6).
-- ✅ Fewer messages per task through batch execution (`/do`).
-- ✅ Reduced output tokens through strict agent response budgets.
-
-| Factor | Measured Impact | Mechanism |
-|--------|----------------|-----------|
-| **Model Selection** | **5x cost reduction** | Haiku 4.5 ($1/MTok) vs Opus 4.6 ($5/MTok) — API pricing |
-| **Output Budget** | **~60% output reduction** | Agent response limits (builder: 5 lines, reviewer: 1 line PASS) |
-| **Batch Execution** | **~3x fewer messages** | `/do` = 2 msg vs sequential pipeline = 6+ msg |
-| **CLI Filtering (mgrep)** | **~50% tool output reduction** | Benchmark: $0.49 → $0.23 per task ([verified](https://x.com/affaanmustafa/status/2014040193557471352)) |
-| **CLI Filtering (jq)** | **Reduces unnecessary output** | JSON field selection on structured data (estimated) |
-| **Atomic Rollback** | **2-4 msg saved per failure** | `git stash` snapshot before `/do` — clean state on failure, zero API cost |
-
----
-
-<details>
-<summary><strong>🔬 Architecture Analysis — Mathematical Basis for Design Decisions</strong></summary>
-
-### Core Philosophy Validation
-
-CPMM's "Maximum Value Per Message" directly minimizes the Pro Plan quota cost function:
-
-```
-Total_Quota ≈ Σ f(model_weight_i, context_size_i, output_size_i)
-```
-
-| Variable | CPMM Mechanism | Reduction |
-|----------|---------------|-----------|
-| `model_weight` | Haiku 4.5 ($1/MTok) instead of Opus 4.6 ($5/MTok) | **5x** (API pricing ratio 1:5) |
-| `output_size` | Agent response budgets (builder: 5 lines, reviewer: 1 line) | **~60%** (estimated) |
-| `context_size` | `mgrep` ~50% output reduction ([verified](https://x.com/affaanmustafa/status/2014040193557471352)) + `jq` field selection (estimated) + auto-compact at 75% | **~50%** mgrep verified |
-
-**Known limitation**: Context grows within a session as messages accumulate, making each successive message more expensive. Mitigated by 3-tier compact warnings (25/50/75 tool calls) and auto-compact at 75% context.
-
-### Hybrid Strategy: Why Batch Default + Sequential Fallback
-
-Let **p** = probability that a `/do` (batch) execution fails and requires escalation to `/plan` (sequential).
-
-| Strategy | Formula | Messages per 100 Tasks |
-|----------|---------|----------------------|
-| Always `/plan` (sequential) | 6 × 100 | **600** |
-| Hybrid (`/do` default) | 2×(1−p)×100 + (2+6)×p×100 | **200 + 600p** |
-
-**Break-even**: 200 + 600p = 600 → **p = 0.67 (67%)**
-
-> Note: `/do` failure = 2 messages (1 user request + 1 Claude failure report). Retries occur within the subagent, not as separate messages.
-
-| Failure Rate (p) | Hybrid Cost | Sequential Cost | Savings |
-|:-:|:-:|:-:|:-:|
-| 10% | 260 msg | 600 msg | **57%** |
-| 20% | 320 msg | 600 msg | **47%** |
-| 30% | 380 msg | 600 msg | **37%** |
-| 50% | 500 msg | 600 msg | **17%** |
-| 67% | 600 msg | 600 msg | 0% (break-even) |
-
-**Conclusion**: Hybrid outperforms always-sequential for any realistic failure rate below 67%.
-
-### Subagent Cache Tradeoff
-
-> [!NOTE]
-> This analysis is **[Estimated]** — subagent cache sharing behavior is not documented in official sources.
-
-CPMM's `/do` command uses subagents (Task tool) for batch execution. This creates a cache tradeoff:
-
-| Execution | Messages | Cache Behavior |
-|-----------|----------|---------------|
-| **Batch (subagent)** | 2 msg | New context → Cache Write (1.25x). Cannot reuse parent's cached prefix |
-| **Sequential (same context)** | 6+ msg | Same context → Cache Read (0.1x) on subsequent turns |
-
-**Why batch is still the default**: For short, well-defined tasks (1-3 files), the message savings (2 vs 6+) outweigh the cache penalty. Sequential execution benefits more from caching in long, multi-turn sessions with large context.
- 
-**Official Basis:**
-- **Context Isolation**: *"Each subagent runs in its own context window"* ([source](https://code.claude.com/docs/en/sub-agents))
-- **Documentation Gap**: Cache sharing between parent and subagent contexts is not documented ([GitHub #5812](https://github.com/anthropics/claude-code/issues/5812))
-
-### Atomic Rollback Cost-Benefit
-
-| Scenario | Without Rollback | With Rollback | Saved |
-|----------|:-:|:-:|:-:|
-| `/do` success | 2 msg | 2 msg | 0 |
-| `/do` failure (2 retries) | 4 msg + 2-4 msg cleanup | 4 msg (auto-restore) | **2-4 msg** |
-| API cost of rollback | — | 0 (`git stash` is local) | **0** |
-
-### Optimization Factor Summary
-
-| Factor | Impact | Evidence | Status |
-|--------|--------|----------|:------:|
-| Model Selection | **5x** cost reduction | API pricing: Haiku 4.5 $1 vs Opus 4.6 $5 /MTok input | Verified |
-| Output Tax | **5x** cost multiplier | API pricing: Output = 5× Input | Verified |
-| Batch Execution | **~3x** fewer messages | `/do` = 2 msg vs `/plan` = 6+ msg | Measured |
-| CLI Filtering (mgrep) | **~50%** tool output reduction | Benchmark: $0.49 → $0.23 per task | Verified |
-| CLI Filtering (jq) | Reduces unnecessary output | JSON field selection on structured data | Estimated |
-| Atomic Rollback | **2-4 msg** saved per failure | `git stash` prevents dirty state | Estimated |
-
-> **Core Efficiency:**
-> - **5x Verified**: Model selection (Haiku $1 vs Opus $5 /MTok)
-> - **Estimated Savings**: Output budgets (~60%), Batch execution (~3x fewer messages), CLI filtering (~50% less output)
-> - **Safety**: Atomic rollback prevents waste on failure
-
-</details>
+1. Start with `Haiku + /do`. (Set `/model haiku` first if needed.)
+2. Use `/do` for straightforward tasks (usually 1-3 files).
+3. Use `/plan` when architecture judgment or multi-file checkpoints are needed.
+4. If Haiku keeps failing, escalate to `Sonnet + /do-sonnet`.
+5. Use `Opus + /do-opus` only when truly necessary.
+6. Keep context lean with timely compaction.
+7. For measured values and experiment context, see the [experiment archive](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md).
 
 ---
 
@@ -329,6 +184,8 @@ This project provides detailed documentation for each component. Refer to the li
 
 | Category | Description | Detailed Docs (Click) |
 | :--- | :--- | :--- |
+| **📊 Strategy Evidence** | Archived experiment results backing core strategy | [📂 **Experiment Archive**](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md) |
+| **🧭 User Guide** | Practical operating scenarios right after installation | [📂 **User Guide**](docs/USER-MANUAL.md) |
 | **🤖 Agents** | Definitions of roles and prompts for Planner, Builder, Reviewer, etc. | [📂 **Agents Guide**](.claude/agents/README.md) |
 | **🕹️ Commands** | Usage of 14 commands including /plan, /do, /review | [📂 **Commands Guide**](.claude/commands/README.md) |
 | **🪝 Hooks** | Logic of 11 automation scripts including Pre-check, Auto-format | [📂 **Hooks Guide**](scripts/hooks/README.md) |
@@ -358,7 +215,7 @@ claude-pro-minmax
 ├── .claude/
 │   ├── CLAUDE.md               # Core Instructions (Loaded in all sessions)
 │   ├── settings.json           # Project Settings (Permissions, hooks, env vars)
-│   ├── settings.local.json     # Local user settings (Excluded from Git)
+│   ├── settings.local.json     # Local user settings (typically gitignored for per-user overrides)
 │   ├── agents/                 # Agent Definitions
 │   │   ├── planner.md          # Sonnet 4.5: Architecture and design decisions
 │   │   ├── dplanner.md         # Sonnet 4.5+MCP: Deep planning utilizing external tools
@@ -440,7 +297,7 @@ claude-pro-minmax
 | Node | npm, pnpm, yarn, bun | `package.json` |
 | Rust | Cargo | `Cargo.toml` |
 | Go | Go Modules | `go.mod` |
-| Python | pip, poetry, uv | `pyproject.toml`, `requirements.txt` |
+| Python | pip, poetry, uv | `pyproject.toml`, `setup.py`, `requirements.txt` |
 
 To add a new runtime, copy and implement `scripts/runtime/adapters/_template.sh`.
 
@@ -452,11 +309,11 @@ To add a new runtime, copy and implement `scripts/runtime/adapters/_template.sh`
 <summary><strong>Q: How does this configuration optimize the Pro Plan quota?</strong></summary>
 
 A: Anthropic's exact quota algorithm is not public. Optimization is based on three pillars:
-- **Model Cost** (verified): Haiku 4.5 is 1/5 the price of Opus 4.6 per API pricing ($1 vs $5 /MTok input).
-- **Output Reduction** (verified): Output tokens cost 5x input. Agent response budgets + CLI filtering reduce output.
-- **Message Efficiency**: `/do` batches plan+build+verify into a single response (2 messages vs 6+ in sequential pipeline).
+- **Low-cost model-first path**: Start implementation with Haiku, and escalate to Sonnet/Opus only when needed.
+- **Output-cost awareness**: Output tokens are priced higher than input, so response budgets/filtering reduce payload.
+- **Workflow simplification**: Use `/do` and `/plan` by task type to avoid unnecessary high-cost turns.
 
-For tasks where you need human checkpoints, use `/plan` for sequential execution with review between phases.
+For measured evidence, see [docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md).
 </details>
 
 <details>
@@ -484,7 +341,7 @@ This configuration is specifically designed for the Pro Plan's 5-hour rolling re
 <details>
 <summary><strong>Q: Does it conflict with existing Claude Code settings?</strong></summary>
 
-A: It overwrites the `~/.claude/` directory. Please back up your existing settings before installation.
+A: It overwrites the `~/.claude/` directory, but `install.sh` automatically creates a backup as `~/.claude-backup-{timestamp}` before replacing it.
 </details>
 
 <details>
@@ -510,28 +367,13 @@ A: CPMM uses **Atomic Rollback**. Before `/do` executes, `git stash push` saves 
 
 ---
 
-## Evidence & Sources
+## References
 
-### Verified (Official Documentation)
-- Model pricing: Haiku $1, Sonnet $3, Opus $5 /MTok input — [docs.anthropic.com/pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
-- Output = 5x input pricing — [docs.anthropic.com/pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
-- Prompt caching: Cache Read = 0.1x — [platform.claude.com/docs/prompt-caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching)
-- Pro Plan caching: *"Content in projects is cached and doesn't count against your limits"* — [support.claude.com](https://support.claude.com/en/articles/9797557-usage-limit-best-practices)
-- Usage factors: *"length, complexity, features, model"* — [support.claude.com](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits)
-- Subagent context isolation: *"Each subagent runs in its own context window"* — [code.claude.com/docs/sub-agents](https://code.claude.com/docs/en/sub-agents)
-
-### Community Evidence
-- Model-specific quota impact: Haiku ~5%/session vs Sonnet significantly higher — [GitHub #9094](https://github.com/anthropics/claude-code/issues/9094)
-- Quota variability: 5.6%-59.9%/hour on same plan — [GitHub #22435](https://github.com/anthropics/claude-code/issues/22435)
-- Subagent context bridging request (closed) — [GitHub #5812](https://github.com/anthropics/claude-code/issues/5812)
-
-### Estimated (Not Independently Verified)
-- ~60% output reduction from agent response budgets
-- ~3x fewer messages from batch execution (2 msg vs 6+ msg)
-- 2-4 messages saved per atomic rollback on failure
-- Subagent cache isolation (inferred from context isolation — not officially documented)
-- Tool definition overhead: ~300-500 tokens per tool per turn
-- Extended Thinking: ~4-5x token consumption when enabled
+- Archived experiment evidence for core strategy: [docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md)
+- Official pricing and usage docs:
+  - [Anthropic Pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
+  - [Usage Limit Best Practices](https://support.claude.com/en/articles/9797557-usage-limit-best-practices)
+  - [Understanding Usage and Length Limits](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits)
 
 ---
 

@@ -5,6 +5,8 @@
 ## Purpose
 Stores session state files created by `/session-save`. Enables continuity across sessions.
 
+> **Path note:** Examples include installed paths (`~/.claude/...`). In this repository, source paths are `./.claude/...` and `./scripts/...`.
+
 ## Session Lifecycle
 
 ```mermaid
@@ -167,7 +169,8 @@ ls -la .claude/sessions/
 find .claude/sessions/ -mtime +30 -delete
 
 # Manual scrub (if needed)
-node ~/.claude/scripts/scrub-secrets.js < session.md > clean.md
+node scripts/scrub-secrets.js < session.md > clean.md
+# Installed path: node ~/.claude/scripts/scrub-secrets.js < session.md > clean.md
 ```
 
 ## Claude Built-in Session Commands
@@ -188,5 +191,5 @@ In addition to custom `/session-save` and `/session-load`, Claude Code has built
 2. Save before long breaks (>4 hours)
 3. Use descriptive names
 4. Prune old sessions periodically
-5. **Ensure scripts are executable**: `chmod +x ~/.claude/scripts/hooks/*.sh`
-
+5. **Ensure scripts are executable**: `chmod +x scripts/hooks/*.sh`  
+   (Installed path: `chmod +x ~/.claude/scripts/hooks/*.sh`)

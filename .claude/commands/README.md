@@ -5,6 +5,8 @@
 ## Purpose
 Contains slash command definitions for common workflows.
 
+> **Path note:** Command/agent prompts reference installed paths (`~/.claude/...`). In this repository, the corresponding source paths are `./.claude/...` and `./scripts/...`.
+
 ## Contents
 
 | Command | Purpose | Key Feature |
@@ -29,7 +31,7 @@ Contains slash command definitions for common workflows.
 ### Execution Commands
 | Command | When to Use | Resource Usage |
 |---------|-------------|----------------|
-| `/do` | Simple-to-medium tasks (1-3 files). Atomic batch with rollback on failure | Minimal (Haiku 4.5 default) |
+| `/do` | Simple-to-medium tasks (1-3 files). Atomic batch with rollback on failure | Minimal (session model) |
 | `/do-sonnet` | Complex logic requiring deeper reasoning | Moderate (Sonnet 4.5) |
 | `/do-opus` | Critical decisions, Sonnet failed | Higher (Opus 4.6—API pricing reflects cost) |
 | `/plan` | Multi-file tasks, architecture decisions | Moderate (Sonnet 4.5 → Haiku 4.5 chain) |
@@ -74,7 +76,7 @@ Contains slash command definitions for common workflows.
 # 2. Review after implementation
 /review src/services/user-service.ts
 ```
-**Quota:** Low (Haiku 4.5 execution + Haiku 4.5 review)
+**Quota:** Low (Session model execution + Haiku 4.5 review)
 
 ### Complex Feature Implementation
 ```bash
@@ -136,21 +138,21 @@ Contains slash command definitions for common workflows.
 
 | Aspect | /do | /do-sonnet | /do-opus | /plan | /dplan |
 |--------|-----|------------|----------|-------|--------|
-| **Model** | Haiku 4.5 (default) | Sonnet 4.5 | Opus 4.6 | Sonnet 4.5 → Haiku 4.5 | Sonnet 4.5 + MCP |
-| **Cost** | 1x | ~3x | ~5x | ~6x | ~10-15x |
+| **Model** | Session model | Sonnet 4.5 | Opus 4.6 | Sonnet 4.5 → Haiku 4.5 | Sonnet 4.5 + MCP |
+| **Relative Cost** | Low | Medium | High | Medium-High | Highest |
 | **Planning** | Internal (batch) | Internal (batch) | Internal (batch) | Architecture design | Deep research |
 | **Use Case** | Simple tasks | Complex logic | Critical decisions | Multi-file features | Unknown unknowns |
-| **Files Affected** | 1-2 | 1-3 | Any | 5+ | Any |
+| **Files Affected** | 1-3 | 1-3 | Any | 5+ | Any |
 | **Questions** | No | No | No | ≤3 (with defaults) | Unlimited |
 | **Research Tools** | No | No | No | No | Yes (Perplexity, Context7) |
 
 **Decision Tree:**
 ```
 Task Complexity
-├─ Simple (1-2 files, clear requirements)
+├─ Simple (1-3 files, clear requirements)
 │   └─→ /do
 │
-├─ Moderate (3-5 files, some complexity)
+├─ Moderate (4-5 files, some complexity)
 │   ├─ Logic-heavy → /do-sonnet
 │   └─ Multi-file → /plan
 │
@@ -186,7 +188,7 @@ Task Complexity
 
 **Use `/do` when:**
 - Task is well-defined with clear requirements
-- Affects 1-2 files only
+- Affects 1-3 files only
 - No architectural decisions needed
 - Example: "Add validation to user input"
 
@@ -320,7 +322,7 @@ Task Complexity
 
 | Decision | Rationale |
 |----------|-----------|
-| `/do-sonnet` and `/do-opus` as separate commands | Frontmatter `model:` field only works with `context: fork`. Separate commands guarantee actual model switch via subagent |
+| `/do-sonnet` and `/do-opus` as separate commands | Frontmatter `model:` field only works with `context: fork`. Separate commands are required to route execution through the intended subagent model |
 | `/plan` uses `agent: planner`, `/review` uses `agent: reviewer` | These commands need specific tool restrictions. `planner` is read-only (no Write/Edit). `reviewer` is also read-only. The `agent:` field applies that agent's tools/permissions |
 | `/load-context` with `disable-model-invocation: false` | Must be `false` so Claude can auto-invoke this command. If `true`, Claude cannot use Read tool to load context files |
 | `/compact-phase` as guidance only | Claude Code's `/compact` requires user input. This command provides phase-specific prompts to copy-paste |

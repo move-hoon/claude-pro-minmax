@@ -5,6 +5,8 @@
 ## Purpose
 Contains sub-agent definitions for role-based task delegation with model optimization.
 
+> **Path note:** Prompt snippets use installed paths (`~/.claude/...`). In this repository, equivalent source paths are `./.claude/...` and `./scripts/...`.
+
 ## Contents
 
 | Agent | Model | Role | Tools | Questions |
@@ -50,7 +52,7 @@ Contains sub-agent definitions for role-based task delegation with model optimiz
 - Simple well-defined tasks (direct `/do`)
 - Bug fixes with clear reproduction
 
-**Triggers:** `/do [task]`, `/plan` delegation, `/dplan` delegation
+**Triggers:** `/plan` delegation, `/dplan` delegation, direct `@builder [task]` call
 
 **Protocol:**
 - Maximum 2 retries → Escalate on failure
@@ -63,7 +65,7 @@ Contains sub-agent definitions for role-based task delegation with model optimiz
 - Via `/do*`: `~/.claude/scripts/snapshot.sh push` creates labeled stash with depth guard
 - On success: `~/.claude/scripts/snapshot.sh drop` (label-checked, safe no-op if no snapshot)
 - On failure: `~/.claude/scripts/snapshot.sh pop` (label-checked, falls back to `git checkout .`)
-- Prevents dirty state that wastes 2-4 messages on manual cleanup
+- Prevents dirty state that can add extra manual cleanup turns (2-4 messages is an estimate)
 
 ### @reviewer (Code Review)
 **Use for:**
@@ -97,24 +99,32 @@ flowchart TD
     Spec --> UserAppr{User\nApprove?}
     UserAppr -- No --> Cmd
     
-    %% Branch 2: Execution (Direct or Approved)
+    %% Branch 2a: /plan Execution (Approved → @builder)
     subgraph Execution ["Phase 2: Implementation"]
         direction TB
         UserAppr -- Yes --> Builder[/"@builder (Haiku 4.5)"/]
-        Cmd -->|/do| Snap["git stash"]
-        Snap --> Builder
-        
+
         %% Safe Execution Loop
         Builder --> Verify{Verify?}
         Verify -- "Retry (<2)" --> Builder
     end
-    
+
+    %% Branch 2b: /do Direct Execution (Session Model)
+    Cmd -->|/do| Snap["git stash"]
+    Snap --> Exec["Session Model (Direct)"]
+    Exec --> VerifyDo{Verify?}
+    VerifyDo -- "Retry (<2)" --> Exec
+    VerifyDo -->|Success| DropDo["git stash drop"]
+    DropDo --> Done
+    VerifyDo -- "Fail (x2)" --> PopDo["git stash pop"]
+    PopDo --> EscalateDo(STOP & Suggest)
+
     %% Branch 3: Escalation (Model Upgrade)
     Verify -- "Fail (x2)" --> Pop["git stash pop"]
     Pop --> Escalate(STOP & Suggest)
-    Escalate -.->|"/do-sonnet"| SonnetExec[/"@builder (Sonnet 4.5)"/]
+    Escalate -.->|"/do-sonnet"| SonnetExec["Sonnet 4.5 (Direct)"]
     SonnetExec --> Verify
-    
+
     %% Branch 4: Completion
     Verify -->|Success| Drop["git stash drop"]
     Drop --> Reviewer[/"@reviewer"/]
@@ -125,10 +135,12 @@ flowchart TD
     classDef logic fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
     classDef term fill:#e0f2f1,stroke:#00695c,stroke-width:2px;
     classDef fail fill:#ffebee,stroke:#c62828,stroke-width:2px,stroke-dasharray: 5 5;
-    
-    class Planner,DPlanner,Builder,Reviewer,SonnetExec,Snap,Pop,Drop agent;
-    class Cmd,Verify,UserAppr logic;
-    class Start,Done,Escalate term;
+    classDef direct fill:#fff9c4,stroke:#f9a825,stroke-width:2px;
+
+    class Planner,DPlanner,Builder,Reviewer,Snap,Pop,Drop,SnapDo,PopDo,DropDo agent;
+    class Cmd,Verify,VerifyDo,UserAppr logic;
+    class Start,Done,Escalate,EscalateDo term;
+    class Exec,SonnetExec direct;
 ```
 
 
@@ -144,7 +156,7 @@ flowchart TD
 | @reviewer read-only enforcement | Hook-based blocking (`readonly-check.sh`). Prevents accidental modifications during review |
 | @dplanner with MCP tools | Research-heavy tasks justify MCP overhead. `sequential-thinking` + `perplexity` + `context7` enable fail-proof planning |
 | Output Budget per agent | Output costs 5x Input (API pricing). Strict budgets: builder 5 lines, reviewer 1 line PASS / 30 lines FAIL, dplanner 60 lines, planner 1 sentence/task |
-| @builder atomic rollback | `~/.claude/scripts/snapshot.sh` handles `git stash` with depth guard + label check before `/do` execution. Prevents popping unrelated user stashes. Failure triggers `pop` (or `git checkout .` on clean tree) → clean state for immediate escalation. Saves 2-4 messages per failure, zero API cost |
+| @builder atomic rollback | `~/.claude/scripts/snapshot.sh` handles `git stash` with depth guard + label check before `/do` execution. Prevents popping unrelated user stashes. Failure triggers `pop` (or `git checkout .` on clean tree) → clean state for immediate escalation. Estimated savings: 2-4 messages per failure, zero API cost |
 
 ## Adding Custom Agents
 

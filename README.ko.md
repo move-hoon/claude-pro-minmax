@@ -7,7 +7,7 @@
 
 # Claude Pro MinMax (CPMM)
 
-> **토큰은 Minimum, 지능은 Maximum. Pro Plan의 한계 안에서 모든 토큰을 최적화하세요.**
+> **토큰 낭비는 최소화하고, 유효 작업량은 최대화합니다.**
 
 Pro Plan 제약에 최적화된 Claude Code 설정입니다.
 
@@ -15,9 +15,9 @@ Pro Plan 제약에 최적화된 Claude Code 설정입니다.
 
 > [!TIP]
 > **🚀 3초 요약: 왜 이걸 써야 하나요?**
-> 1.  **배치 + 저비용 모델:** `/do` 하나로 **Haiku 4.5(Opus 4.6의 1/5 비용)** 에게 plan+build+verify를 한 번에 처리시킵니다.
-> 2.  **출력 비용 인식:** 에이전트 응답 예산 + CLI 필터링으로 **Input 대비 5배 비싼** Output 토큰을 절감합니다.
-> 3.  **무비용 안전장치:** **11개 로컬 Hook** + **원자적 롤백** — API 토큰 소비 없이 모든 안전장치가 동작합니다.
+> 1.  **배치 실행:** `/do`로 구현-검증을 한 흐름에서 처리하고, 필요할 때만 `/do-sonnet`/`/do-opus`로 승격합니다.
+> 2.  **출력 비용 제어:** 응답 예산과 CLI 필터링으로 불필요한 출력 토큰을 줄입니다.
+> 3.  **로컬 안전장치:** 로컬 Hook + 원자적 롤백으로 실패 시 빠르게 복구합니다.
 
 ---
 
@@ -29,14 +29,23 @@ npm install -g @anthropic-ai/claude-code
 npm install -g @mixedbread/mgrep
 mgrep install-claude-code
 brew install jq   # macOS (Linux: sudo apt-get install jq)
+brew install tmux # 선택: /watch 사용 시 필요 (Linux: sudo apt-get install tmux)
 ```
 
-### 2. 한 줄 설치
+### 2. One-Line Install
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/move-hoon/claude-pro-minmax/main/install.sh)"
 ```
 
-### 3. 설치 후 설정 (선택 사항)
+### 3. Manual Install
+```bash
+git clone https://github.com/move-hoon/claude-pro-minmax.git
+cd claude-pro-minmax
+less install.sh
+bash install.sh
+```
+
+### 4. 설치 후 설정 (선택 사항)
 **설치 스크립트 실행 중 Perplexity API 키와 출력 언어를 선택합니다.**
 설치 시 언어를 건너뛰었다면 수동으로 설정할 수 있습니다:
 - **비영어:** `~/.claude/rules/language.md`를 생성하여 원하는 언어 지정
@@ -61,8 +70,8 @@ Perplexity를 설치 시 건너뛰었다면 나중에 수동으로 설정할 수
 
 > **Note:** 설치 스크립트가 기존 `~/.claude` 설정을 자동으로 백업(`~/.claude-backup-{timestamp}`)합니다.
 
-### 4. 프로젝트 초기화
-> **Tip:** `claude` 실행 전, `~/.claude/project-templates/`를 참고하여 `.claude/CLAUDE.md`와 `settings.json`을 먼저 설정하세요. 그래야 최적화가 처음부터 적용됩니다.
+### 5. 프로젝트 초기화
+> **Tip:** `claude` 실행 전, 이 저장소의 `project-templates/`를 참고해 프로젝트를 초기화하세요. (`install.sh`는 `project-templates`를 `~/.claude`로 복사하지 않습니다.)
 
 ---
 
@@ -70,7 +79,7 @@ Perplexity를 설치 시 건너뛰었다면 나중에 수동으로 설정할 수
 
 ### 🤖 에이전트 워크플로우
 
-CPMM은 작업의 복잡도에 따라 Sonnet 4.5(설계)과 Haiku 4.5(구현)를 자동으로 오가며 최적의 효율을 냅니다.
+CPMM은 계층적 모델 라우팅을 제공합니다: `/plan`은 @planner (Sonnet 4.5) → @builder (Haiku 4.5) 체인으로 복잡한 작업을 처리하고, `/do`는 현재 세션 모델에서 직접 실행하여 속도를 높입니다.
 
 ```mermaid
 flowchart LR
@@ -79,11 +88,13 @@ flowchart LR
     Cmd -->|/plan| Plan[/"@planner (Sonnet 4.5)"/]
     Cmd -->|/do| Snap["📸 git stash push"]
 
-    Snap --> Build[/"@builder (Haiku 4.5)"/]
-    Plan -->|Blueprint| Build
-    Build -- "Success" --> Drop["🗑️ git stash drop"]
+    Snap --> Exec["Session Model (Direct)"]
+    Plan -->|Blueprint| Build[/"@builder (Haiku 4.5)"/]
+    Exec -- "Success" --> Drop["🗑️ git stash drop"]
+    Build -- "Success" --> Drop
     Drop --> Review[/"@reviewer (Haiku 4.5)"/]
-    Build -- "Failure (2x)" --> Pop["⏪ git stash pop"]
+    Exec -- "Failure (2x)" --> Pop["⏪ git stash pop"]
+    Build -- "Failure (2x)" --> Pop
     Pop --> Escalate("🚨 Escalate to Sonnet 4.5")
 
     Review --> Done([Done])
@@ -95,6 +106,7 @@ flowchart LR
     classDef escalate fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px;
     classDef done fill:#e0e0e0,stroke:#9e9e9e,stroke-width:2px,font-weight:bold;
     classDef snapshot fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px;
+    classDef direct fill:#fff9c4,stroke:#f9a825,stroke-width:2px;
 
     class Plan planner;
     class Build builder;
@@ -102,6 +114,7 @@ flowchart LR
     class Escalate escalate;
     class Done done;
     class Snap,Drop,Pop snapshot;
+    class Exec direct;
 ```
 
 ### ⌨️ 명령어 가이드
@@ -112,9 +125,11 @@ flowchart LR
 
 | 명령어 | 설명 | 추천 상황 |
 | --- | --- | --- |
-| `/do [작업]` | **Haiku 4.5**로 빠르게 구현 | 간단한 버그 수정, 스크립트 작성 |
+| `/do [작업]` | 빠른 구현 (세션 모델) | 간단한 버그 수정, 스크립트 작성 |
 | `/plan [작업]` | **Sonnet 4.5** 설계 → **Haiku 4.5** 구현 | 기능 추가, 리팩토링, 복잡한 로직 |
 | `/review [대상]` | **Haiku 4.5** (읽기 전용) | 코드 리뷰 (파일 또는 디렉토리 지정 가능) |
+
+> **비용 최적화 Tip:** 간단한 작업에 `/do`를 사용하기 전 세션 모델을 Haiku로 설정하세요 (`/model haiku`) — @builder와 동일한 **API 입력 토큰 단가 기준 1/5**. 복잡한 작업에는 `/do-sonnet` 또는 `/plan`을 사용하세요.
 
 <details>
 <summary><strong>🚀 심화 명령어 (Advanced Commands) - Click to Expand</strong></summary>
@@ -134,7 +149,7 @@ flowchart LR
 | `/load-context` | 컨텍스트 템플릿 로드 | 프론트/백엔드 초기 설정 시 |
 | **🛠️ 유틸리티** | | |
 | `/learn` | 패턴 학습 및 저장 | 자주 반복되는 오류나 선호 스타일 등록 |
-| `/analyze-failures`| 오류 로그 분석 | 반복되는 에러 원인 파악 |
+| `/analyze-failures` | 오류 로그 분석 | 반복되는 에러 원인 파악 |
 | `/watch` | 프로세스 모니터링 (tmux) | 장시간 빌드/테스트 관찰 |
 | `/llms-txt` | 문서 가져오기 | 라이브러리 공식 문서를 LLM 포맷으로 로드 |
 
@@ -145,181 +160,21 @@ flowchart LR
 ## 핵심 전략
 
 > [!NOTE]
-> Anthropic의 정확한 Quota 알고리즘은 비공개입니다. 본 설정은 **API 가격 및 검증된 비용 요인**을 기반으로 최적화하며, 실제 결과는 작업 복잡도에 따라 달라질 수 있습니다.
->
-> **검증된 증거:**
-> - **공식 문서**: *"Content in projects is cached and doesn't count against your limits when reused"* ([출처](https://support.claude.com/en/articles/9797557-usage-limit-best-practices))
-> - **사용량 요인**: *"length, complexity, features, and model"*에 영향받음 ([출처](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits))
-> - **커뮤니티**: 모델별 쿼터 차이 확인 ([GitHub #9094](https://github.com/anthropics/claude-code/issues/9094))
+> Anthropic은 Pro quota의 정확한 계산 공식을 공개하지 않습니다. 이 README는 바로 적용 가능한 사용자 운영 규칙에 집중합니다. 전략 근거 실험 아카이브는 [docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md)를 참고하세요.
 
-Claude Pro Plan에는 Claude Code 사용 방식을 근본적으로 바꾸는 제약이 있습니다:
+### 목표
 
-- **5시간 Rolling 리셋**: 5시간마다 사용량이 리셋되어 짧고 집중된 세션을 권장합니다.
-- **메시지 기반 Quota (길이 민감)**: 대화가 길어질수록(Context가 쌓일수록) 메시지 하나당 차감되는 할당량이 기하급수적으로 늘어납니다. ([Claude Help Center](https://support.anthropic.com/en/articles/8325606-what-is-claude-pro))
-- **주간 제한**: 과다 사용자에게 추가 주간 cap이 적용됩니다.
+**할당량 창(5시간) 안에서 유효 작업량을 최대화**하는 것입니다.
 
-최적화 없이 기본 Claude Code를 Pro Plan에서 사용하면 quota가 빠르게 소진됩니다 — 단순 작업에 비싼 모델, 장황한 출력, 불필요한 메시지 왕복이 5시간 예산을 빠르게 소진합니다.
+### 운영 원칙
 
-CPMM은 이 각각을 해결합니다:
-
-| Pro Plan 과제 | CPMM 해법 |
-|---|---|
-| Opus 4.6이 단순 작업에도 quota 소모 | **Haiku 4.5 기본** (1/5 비용) — 필요할 때만 에스컬레이션 |
-| 출력이 입력의 5배 비용 | **에이전트 응답 예산** (builder: 5줄, reviewer: 1줄 PASS) |
-| 다단계 파이프라인이 메시지 낭비 | **배치 `/do`** — plan+build+verify를 한 번에 (사용자 1회 요청 → 1회 응답, 순차 방식은 6+ 왕복) |
-| Context 증가 → 메시지당 비용 증가 | **3단계 compact 경고** (25/50/75) + 75% 자동 컴팩션 |
-| 실패 시 dirty state 방치 | **원자적 롤백** (`git stash` 스냅샷 → 실패 시 깨끗한 복원) |
-| Hook/스크립트가 API 호출 소비 | **11개 로컬 Hook** — 모든 강제 실행이 로컬, API 비용 0 |
-
-### 1. 목표 (Goal)
-**Pro Plan의 5시간 Quota 창 내에서 세션 지속 가능성 최대화**
-
-이 설정은 작업당 Quota 소비를 줄여 생산적인 작업 시간을 연장하도록 설계되었습니다. 목표는 "제한 우회"가 아니라, **리소스 효율성 최적화**를 통해 할당량을 소진하지 않고 더 오래 작업하는 것입니다.
-
-### 2. 접근 방식 (Approach)
-Anthropic이 정확한 알고리즘을 공개하지 않았지만, Quota 소비는 다음 요인에 영향을 받습니다. 이 프로젝트는 다음의 단일 원칙으로 모든 요소를 최적화합니다.
-
-> **메시지당 최대 가치 (Maximum Value Per Message)**
-
-* **모델 비용 (핵심 — 5배):** Haiku 4.5는 Opus 4.6의 1/5 비용 ($1 vs $5 /MTok input). 작업 가능한 최저 비용 모델 사용.
-* **출력 토큰 (고영향 — 5배):** Output은 Input의 5배 비용 (API 가격 기준). 모든 에이전트에 응답 예산 적용.
-* **메시지 수 (직접):** 메시지 수 = quota 소비. `/do` 한 번에 plan+build+verify를 배치 처리.
-* **CLI 필터링:** `mgrep`로 도구 출력 ~50% 감소 ([벤치마크 검증](https://x.com/affaanmustafa/status/2014040193557471352)). `jq`로 구조화 데이터에서 불필요한 필드 제거.
-
-### 3. 실행 전략: 가치 우선 워크플로우
-
-1.  **기본: 배치 실행 (`/do`)**
-    * 단순 작업 (1-3 파일): `/do`가 plan+build+verify를 한 번에 처리합니다.
-    * 플래너 오버헤드 없음. 단계 사이 사람 확인 없음.
-    * **결과: 2 메시지** (사용자 요청 + Claude 응답) vs 순차 파이프라인의 6+ 메시지.
-
-2.  **선택: 순차 파이프라인 (`/plan`)**
-    * 중-복잡 작업 (4+ 파일): `/plan` → `@builder` → `@reviewer`.
-    * 단계 사이에 사람 확인이 필요할 때 사용합니다.
-    * 설계 단계 자체를 검증한 후 구현해야 할 때 사용합니다.
-
-3.  **작업당 비용 최소화**
-    * `@builder` (Haiku 4.5): 구현 담당 ($1/MTok — Opus 4.6의 1/5).
-    * `@planner` (Sonnet 4.5): 아키텍처 설계 ($3/MTok — 균형 잡힌 능력과 비용).
-    * **Opus 4.6**: 에스컬레이션 전용 ($5/MTok) — 명시적 `/do-opus`로 비용 가시화.
-
-4.  **안전한 에스컬레이션 경로 (Safety Ladder)**
-    * Haiku 4.5 실패 (2회 재시도 후) → Sonnet 4.5로 격상 (`/do-sonnet`).
-    * Sonnet 4.5 실패 → Opus 4.6으로 격상 (`/do-opus`).
-    * 명시적 모델 선택으로 비용을 인지하게 합니다.
-
-5.  **원자적 롤백 (실패 복구)**
-    * `/do`, `/do-sonnet`, `/do-opus` 실행 전 `git stash` 스냅샷을 생성합니다.
-    * 성공 시: 스냅샷 제거 (오버헤드 없음).
-    * 실패 시 (2회 재시도 후): `git stash pop`으로 실행 전 상태 복원.
-    * **이점**: 즉시 에스컬레이션 가능한 깨끗한 상태 — 수동 정리 불필요, 실패당 **2-4 메시지 절약**.
-
----
-
-## 📊 결과 및 비교
-
-**주요 기대 효과:**
-
-- ✅ 모델 비용 최적화로 훨씬 긴 세션 (Haiku 4.5 = Opus 4.6의 1/5).
-- ✅ 배치 실행(`/do`)으로 작업당 더 적은 메시지.
-- ✅ 엄격한 에이전트 응답 예산으로 출력 토큰 감소.
-
-| 요소 | 측정 효과 | 메커니즘 |
-|------|----------|----------|
-| **모델 선택** | **5배 비용 절감** | Haiku 4.5 ($1/MTok) vs Opus 4.6 ($5/MTok) — API 가격 |
-| **출력 예산** | **~60% 출력 감소** | 에이전트 응답 제한 (builder: 5줄, reviewer: 1줄 PASS) |
-| **배치 실행** | **~3배 메시지 감소** | `/do` = 2 msg vs 순차 파이프라인 = 6+ msg |
-| **CLI 필터링 (mgrep)** | **~50% 도구 출력 감소** | 벤치마크: $0.49 → $0.23 per task ([검증됨](https://x.com/affaanmustafa/status/2014040193557471352)) |
-| **CLI 필터링 (jq)** | **불필요한 출력 제거** | 구조화 데이터의 JSON 필드 선택 (추정) |
-| **원자적 롤백** | **실패당 2-4 msg 절약** | `/do` 전 `git stash` 스냅샷 — 실패 시 깨끗한 상태, API 비용 0 |
-
----
-
-<details>
-<summary><strong>🔬 아키텍처 분석 — 설계 결정의 수학적 근거</strong></summary>
-
-### 핵심 철학 검증
-
-CPMM의 "메시지당 최대 가치"는 Pro Plan quota 비용 함수를 직접 최소화합니다:
-
-```
-Total_Quota ≈ Σ f(model_weight_i, context_size_i, output_size_i)
-```
-
-| 변수 | CPMM 메커니즘 | 감소율 |
-|------|--------------|--------|
-| `model_weight` | Opus 4.6($5/MTok) 대신 Haiku 4.5($1/MTok) 사용 | **5배** (API 가격 비율 1:5) |
-| `output_size` | 에이전트 응답 예산 (builder: 5줄, reviewer: 1줄) | **~60%** (추정) |
-| `context_size` | `mgrep` ~50% 출력 감소 ([검증됨](https://x.com/affaanmustafa/status/2014040193557471352)) + `jq` 필드 선택 (추정) + 75% 자동 컴팩션 | **~50%** mgrep 검증됨 |
-
-**알려진 제한**: 세션 내 메시지가 쌓이면 context가 증가하여 후반 메시지가 더 비쌈. 3단계 컴팩션 경고 (25/50/75 tool calls) + 75% 자동 컴팩션으로 완화.
-
-### 하이브리드 전략: 배치 기본 + 순차 폴백의 수학적 근거
-
-**p** = `/do` (배치) 실행 실패 후 `/plan` (순차)로 에스컬레이션할 확률
-
-| 전략 | 공식 | 100개 작업당 메시지 |
-|------|------|-------------------|
-| 항상 `/plan` (순차) | 6 × 100 | **600** |
-| 하이브리드 (`/do` 기본) | 2×(1−p)×100 + (2+6)×p×100 | **200 + 600p** |
-
-**손익분기점**: 200 + 600p = 600 → **p = 0.67 (67%)**
-
-> Note: `/do` 실패 = 2 메시지 (사용자 요청 1 + Claude 실패 보고 1). 재시도는 서브에이전트 내에서 발생하므로 별도 메시지가 아닙니다.
-
-| 실패율 (p) | 하이브리드 비용 | 순차 비용 | 절약률 |
-|:-:|:-:|:-:|:-:|
-| 10% | 260 msg | 600 msg | **57%** |
-| 20% | 320 msg | 600 msg | **47%** |
-| 30% | 380 msg | 600 msg | **37%** |
-| 50% | 500 msg | 600 msg | **17%** |
-| 67% | 600 msg | 600 msg | 0% (손익분기) |
-
-**결론**: 하이브리드 전략은 현실적인 실패율(67% 미만) 모든 구간에서 항상-순차 전략보다 우월합니다.
-
-### 서브에이전트 캐시 트레이드오프
-
-> [!NOTE]
-> 이 분석은 **[추정]**입니다 — 서브에이전트 캐시 공유 동작은 공식 문서에 기록되어 있지 않습니다.
-
-CPMM의 `/do` 명령은 배치 실행을 위해 서브에이전트(Task tool)를 사용합니다. 이는 캐시 트레이드오프를 만듭니다:
-
-| 실행 방식 | 메시지 | 캐시 동작 |
-|-----------|--------|-----------|
-| **배치 (서브에이전트)** | 2 msg | 새 컨텍스트 → Cache Write (1.25x). 부모의 캐시된 프리픽스 재사용 불가 |
-| **순차 (같은 컨텍스트)** | 6+ msg | 같은 컨텍스트 → 이후 턴에서 Cache Read (0.1x) |
-
-**배치가 여전히 기본인 이유**: 짧고 명확한 작업(1-3 파일)에서는 메시지 절약(2 vs 6+)이 캐시 페널티를 상쇄합니다. 순차 실행은 큰 컨텍스트를 가진 긴 멀티턴 세션에서 캐싱 혜택이 더 큽니다.
- 
-**공식 근거:**
-- **컨텍스트 격리**: *"Each subagent runs in its own context window"* ([출처](https://code.claude.com/docs/en/sub-agents))
-- **문서화 공백**: 부모와 서브에이전트 컨텍스트 간 캐시 공유는 문서화되지 않음 ([GitHub #5812](https://github.com/anthropics/claude-code/issues/5812))
-
-### 원자적 롤백 비용-편익
-
-| 시나리오 | 롤백 없음 | 롤백 있음 | 절약 |
-|----------|:-:|:-:|:-:|
-| `/do` 성공 | 2 msg | 2 msg | 0 |
-| `/do` 실패 (2회 재시도) | 4 msg + 2-4 msg 정리 | 4 msg (자동 복원) | **2-4 msg** |
-| 롤백 API 비용 | — | 0 (`git stash`는 로컬) | **0** |
-
-### 최적화 요소 종합
-
-| 요소 | 효과 | 근거 | 상태 |
-|------|------|------|:----:|
-| 모델 선택 | **5배** 비용 절감 | API 가격: Haiku 4.5 $1 vs Opus 4.6 $5 /MTok input | 검증됨 |
-| 출력 비용 | **5배** 비용 배수 | API 가격: Output = Input의 5배 | 검증됨 |
-| 배치 실행 | **~3배** 메시지 감소 | `/do` = 2 msg vs `/plan` = 6+ msg | 측정됨 |
-| CLI 필터링 (mgrep) | **~50%** 도구 출력 감소 | 벤치마크: $0.49 → $0.23 per task | 검증됨 |
-| CLI 필터링 (jq) | 불필요한 출력 제거 | 구조화 데이터의 JSON 필드 선택 | 추정 |
-| 원자적 롤백 | 실패당 **2-4 msg** 절약 | `git stash`로 dirty state 방지 | 추정 |
-
-> **핵심 효율:**
-> - **5배 검증**: 모델 선택 (Haiku $1 vs Opus $5 /MTok)
-> - **추가 절감 (추정)**: 출력 예산(~60%), 배치 실행(~3배 메시지 감소), CLI 필터링(~50% 도구 출력 감소)
-> - **안전장치**: 원자적 롤백으로 실패 시 낭비 방지
-
-</details>
+1. 시작은 `Haiku + /do`로 합니다. (필요 시 먼저 `/model haiku`)
+2. 단순 작업(보통 1-3 파일)은 `/do`로 빠르게 처리합니다.
+3. 설계 판단이 필요하거나 멀티파일 체크포인트가 필요하면 `/plan`을 사용합니다.
+4. Haiku로 반복 실패하면 `Sonnet + /do-sonnet`으로 승격합니다.
+5. `Opus + /do-opus`는 정말 필요한 경우에만 사용합니다.
+6. 컨텍스트가 길어지기 전에 compact로 정리합니다.
+7. 상세 측정값과 실험 맥락은 [실험 아카이브](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md)에서 확인합니다.
 
 ---
 
@@ -329,6 +184,8 @@ CPMM의 `/do` 명령은 배치 실행을 위해 서브에이전트(Task tool)를
 
 | 구분 | 설명 | 상세 문서 (클릭) |
 | :--- | :--- | :--- |
+| **📊 전략 근거** | 핵심전략을 뒷받침하는 실험 아카이브 | [📂 **실험 아카이브**](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md) |
+| **🧭 사용자 가이드** | 설치 직후 실무 운영 시나리오 중심 안내서 | [📂 **사용자 가이드**](docs/USER-MANUAL.ko.md) |
 | **🤖 Agents** | Planner, Builder, Reviewer 등 에이전트의 역할과 프롬프트 정의 | [📂 **Agents 가이드**](.claude/agents/README.ko.md) |
 | **🕹️ Commands** | /plan, /do, /review 등 14개 명령어 사용법 | [📂 **Commands 가이드**](.claude/commands/README.ko.md) |
 | **🪝 Hooks** | Pre-check, Auto-format 등 11개 자동화 스크립트 로직 | [📂 **Hooks 가이드**](scripts/hooks/README.ko.md) |
@@ -358,7 +215,7 @@ claude-pro-minmax
 ├── .claude/
 │   ├── CLAUDE.md               # 핵심 지침 (모든 세션에 로드됨)
 │   ├── settings.json           # 프로젝트 설정 (권한, 훅, 환경변수)
-│   ├── settings.local.json     # 로컬 사용자 설정 (Git 제외)
+│   ├── settings.local.json     # 로컬 사용자 설정 (사용자별 오버라이드 용도로 일반적으로 gitignore 대상)
 │   ├── agents/                 # 에이전트 정의
 │   │   ├── planner.md          # Sonnet 4.5: 아키텍처 및 설계 결정
 │   │   ├── dplanner.md         # Sonnet 4.5+MCP: 외부 도구를 활용한 심층 계획
@@ -440,7 +297,7 @@ claude-pro-minmax
 | Node | npm, pnpm, yarn, bun | `package.json` |
 | Rust | Cargo | `Cargo.toml` |
 | Go | Go Modules | `go.mod` |
-| Python | pip, poetry, uv | `pyproject.toml`, `requirements.txt` |
+| Python | pip, poetry, uv | `pyproject.toml`, `setup.py`, `requirements.txt` |
 
 새 런타임을 추가하려면 `scripts/runtime/adapters/_template.sh`를 복사하여 구현하세요.
 
@@ -452,11 +309,11 @@ claude-pro-minmax
 <summary><strong>Q: 이 설정은 어떻게 Pro Plan quota를 최적화하나요?</strong></summary>
 
 A: Anthropic의 정확한 quota 알고리즘은 공개되지 않았습니다. 세 가지 축으로 최적화합니다:
-- **모델 비용** (검증됨): Haiku 4.5는 API 가격 기준 Opus 4.6의 1/5 ($1 vs $5 /MTok input).
-- **출력 감소** (검증됨): Output 토큰은 Input의 5배 비용. 에이전트 응답 예산 + CLI 필터링으로 출력 감소.
-- **메시지 효율**: `/do`가 plan+build+verify를 한 번에 처리 (순차 파이프라인의 6+ 메시지 vs 2 메시지).
+- **저비용 모델 우선 경로**: 기본 구현은 Haiku 중심으로 시작하고 필요 시에만 Sonnet/Opus로 승격합니다.
+- **출력 비용 인식**: Output 토큰은 Input 대비 단가가 높아 응답 예산/필터링으로 payload를 줄입니다.
+- **작업 흐름 단순화**: `/do`와 `/plan`을 상황에 맞게 분리해 불필요한 고비용 턴을 줄입니다.
 
-사람 확인이 필요한 작업에는 `/plan`으로 단계별 순차 실행을 사용하세요.
+근거 실측값은 [docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md)를 참고하세요.
 </details>
 
 <details>
@@ -484,7 +341,7 @@ A: 네, 하지만 이러한 최적화가 필요하지 않을 수 있습니다. M
 <details>
 <summary><strong>Q: 기존 Claude Code 설정과 충돌하나요?</strong></summary>
 
-A: `~/.claude/` 디렉토리를 덮어씁니다. 설치 전에 기존 설정을 백업해 주세요.
+A: `~/.claude/` 디렉토리를 덮어씁니다. 다만 `install.sh`가 교체 전에 `~/.claude-backup-{timestamp}`로 자동 백업합니다.
 </details>
 
 <details>
@@ -510,28 +367,13 @@ A: CPMM은 **원자적 롤백**을 사용합니다. `/do` 실행 전 `git stash 
 
 ---
 
-## 증거 및 출처 (Evidence & Sources)
+## 참고 링크
 
-### 검증됨 (공식 문서)
-- 모델 가격: Haiku $1, Sonnet $3, Opus $5 /MTok input — [docs.anthropic.com/pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
-- Output = Input의 5배 가격 — [docs.anthropic.com/pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
-- Prompt caching: Cache Read = 0.1x — [platform.claude.com/docs/prompt-caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching)
-- Pro Plan 캐싱: *"Content in projects is cached and doesn't count against your limits"* — [support.claude.com](https://support.claude.com/en/articles/9797557-usage-limit-best-practices)
-- 사용량 요인: *"length, complexity, features, model"* — [support.claude.com](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits)
-- 서브에이전트 컨텍스트 격리: *"Each subagent runs in its own context window"* — [code.claude.com/docs/sub-agents](https://code.claude.com/docs/en/sub-agents)
-
-### 커뮤니티 증거
-- 모델별 쿼터 영향: Haiku ~5%/session vs Sonnet 훨씬 높음 — [GitHub #9094](https://github.com/anthropics/claude-code/issues/9094)
-- 쿼터 변동성: 같은 플랜에서 5.6%-59.9%/hour — [GitHub #22435](https://github.com/anthropics/claude-code/issues/22435)
-- 서브에이전트 컨텍스트 브릿징 요청 (closed) — [GitHub #5812](https://github.com/anthropics/claude-code/issues/5812)
-
-### 추정 (독립적 검증 미완)
-- 에이전트 응답 예산으로 ~60% 출력 감소
-- 배치 실행으로 ~3배 메시지 감소 (2 msg vs 6+ msg)
-- 원자적 롤백으로 실패당 2-4 메시지 절약
-- 서브에이전트 캐시 격리 (컨텍스트 격리에서 추론 — 공식 문서 없음)
-- 도구 정의 오버헤드: 턴당 도구당 ~300-500 토큰
-- Extended Thinking: 활성화 시 ~4-5배 토큰 소비
+- 핵심전략 근거 실험 아카이브: [docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md)
+- 공식 문서:
+  - [Anthropic Pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
+  - [Usage Limit Best Practices](https://support.claude.com/en/articles/9797557-usage-limit-best-practices)
+  - [Understanding Usage and Length Limits](https://support.claude.com/en/articles/11647753-understanding-usage-and-length-limits)
 
 ---
 
