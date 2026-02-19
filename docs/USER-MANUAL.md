@@ -39,8 +39,8 @@ Result interpretation:
 | Multi-file feature (4+ files) or unclear structure | `/plan` | `/plan Add JWT refresh flow with rotation.` |
 | Same as above, but plan only | `/plan --no-build` | `/plan --no-build Propose DB migration strategy for billing.` |
 | Need deep research (Sequential Thinking + Perplexity + Context7) | `/dplan` | `/dplan Analyze race conditions in payment retries.` |
-| `/do` failed repeatedly on logic complexity | `/do-sonnet` (~3x Haiku) | `/do-sonnet Implement conflict-safe cache invalidation.` |
-| Sonnet still fails or critical decision | `/do-opus` (~5x Haiku) | `/do-opus Resolve deadlock risk in transaction coordinator.` |
+| `/do` failed repeatedly on logic complexity | `/do-sonnet` | `/do-sonnet Implement conflict-safe cache invalidation.` |
+| Sonnet still fails or critical decision | `/do-opus` | `/do-opus Resolve deadlock risk in transaction coordinator.` |
 | Review changes before merge | `/review` | `/review src/auth/` |
 | Security-focused review | `/review --security` | `/review --security src/auth/` |
 | Save progress before stopping | `/session-save` | `/session-save auth-refresh` |
@@ -289,12 +289,10 @@ Use when: conversation drift, noisy context, slower output quality.
 
 ## 5. Escalation Rules (Operational)
 
-**Cost ratio:** Haiku (1x) · Sonnet (~3x) · Opus (~5x)
-
 - Default execution: `Haiku + /do`
 - Escalate only when needed:
-  1. `/do-sonnet` (~3x cost)
-  2. `/do-opus` (~5x cost)
+  1. `/do-sonnet`
+  2. `/do-opus`
 - Do not stay on high-cost model after the blocker is resolved.
 - Move back to Haiku/Sonnet for routine follow-up work.
 
