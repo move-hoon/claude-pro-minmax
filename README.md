@@ -1,6 +1,8 @@
 > **[한국어 버전](README.ko.md)**
 
 <!-- Badges -->
+[![npm version](https://img.shields.io/npm/v/claude-pro-minmax.svg)](https://www.npmjs.com/package/claude-pro-minmax)
+[![npm downloads](https://img.shields.io/npm/dm/claude-pro-minmax.svg)](https://www.npmjs.com/package/claude-pro-minmax)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Claude Code](https://img.shields.io/badge/Claude_Code-Compatible-purple.svg)
 ![Pro Plan](https://img.shields.io/badge/Pro_Plan-Optimized-green.svg)
