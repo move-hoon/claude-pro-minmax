@@ -46,7 +46,7 @@ for rule in "$SCRIPT_DIR/.claude/rules/"*.md; do
 done
 cp -R "$SCRIPT_DIR/.claude/skills/"* ~/.claude/skills/
 cp "$SCRIPT_DIR/.claude/contexts/"*.md ~/.claude/contexts/
-cp "$SCRIPT_DIR/.claude/sessions/"*.md ~/.claude/sessions/
+# sessions/ dir created above; example files stay in repo only (not installed)
 cp -R "$SCRIPT_DIR/scripts/"* ~/.claude/scripts/
 
 # Clean up documentation files from ~/.claude to prevent parsing errors
@@ -81,8 +81,8 @@ if [ -f "$SCRIPT_DIR/.claude.json" ]; then
             # Enable Perplexity (Rename key and inject API Key)
             # Use jq for reliable JSON editing
             jq --arg key "$PERPLEXITY_KEY" \
-               '.mcpServers.perplexity = .mcpServers._perplexity_disabled_by_default | 
-                .mcpServers.perplexity.env.PERPLEXITY_API_KEY = $key | 
+               '.mcpServers.perplexity = .mcpServers._perplexity_disabled_by_default |
+                .mcpServers.perplexity.env.PERPLEXITY_API_KEY = $key |
                 del(.mcpServers._perplexity_disabled_by_default)' \
                ~/.claude.json > ~/.claude.json.tmp && mv ~/.claude.json.tmp ~/.claude.json
             echo "✅ Perplexity API Key configured!"

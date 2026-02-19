@@ -1,0 +1,59 @@
+{
+  "name": "claude-pro-minmax",
+  "version": "1.0.0",
+  "description": "Quota-first routing and safety layer for Claude Code Pro workflows.",
+  "author": "donghoon <move-hoon@users.noreply.github.com>",
+  "license": "MIT",
+  "type": "commonjs",
+  "bin": {
+    "cpmm": "bin/cpmm.js"
+  },
+  "files": [
+    "bin",
+    ".claude/CLAUDE.md",
+    ".claude/settings.json",
+    ".claude/settings.local.example.json",
+    ".claude/agents",
+    ".claude/commands",
+    ".claude/contexts",
+    ".claude/rules",
+    ".claude/sessions",
+    ".claude/skills",
+    ".claude.json",
+    ".claudeignore",
+    "install.sh",
+    "scripts",
+    "README.md",
+    "README.ko.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "help": "node bin/cpmm.js --help",
+    "doctor": "node bin/cpmm.js doctor",
+    "test": "node bin/cpmm.js --version && node bin/cpmm.js --help"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "claude-pro",
+    "cpmm",
+    "llmops",
+    "devtools",
+    "agentic-coding",
+    "cost-optimization"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/move-hoon/claude-pro-minmax.git"
+  },
+  "bugs": {
+    "url": "https://github.com/move-hoon/claude-pro-minmax/issues"
+  },
+  "homepage": "https://github.com/move-hoon/claude-pro-minmax#readme"
+}

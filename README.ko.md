@@ -28,18 +28,29 @@ CPMM은 모델 라우팅, 출력 제어, 로컬 안전장치로 리셋 전까지
 ### 1. 필수 도구 준비
 ```bash
 npm install -g @anthropic-ai/claude-code
-npm install -g @mixedbread/mgrep
+npm install -g @mixedbread/mgrep  # 선택, 권장: 출력 토큰 ~50% 절감
 mgrep install-claude-code
 brew install jq   # macOS (Linux: sudo apt-get install jq)
 brew install tmux # 선택: /watch 사용 시 필요 (Linux: sudo apt-get install tmux)
 ```
 
-### 2. One-Line Install
+### 2. npm / npx 설치 (권장)
+```bash
+npx claude-pro-minmax@latest install
+```
+
+전역 설치 후 실행:
+```bash
+npm install -g claude-pro-minmax
+cpmm install
+```
+
+### 3. One-Line Install (curl)
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/move-hoon/claude-pro-minmax/main/install.sh)"
 ```
 
-### 3. Manual Install
+### 4. Manual Install
 ```bash
 git clone https://github.com/move-hoon/claude-pro-minmax.git
 cd claude-pro-minmax
@@ -47,7 +58,7 @@ less install.sh
 bash install.sh
 ```
 
-### 4. 설치 후 설정 (선택 사항)
+### 5. 설치 후 설정 (선택 사항)
 **설치 스크립트 실행 중 Perplexity API 키와 출력 언어를 선택합니다.**
 설치 시 언어를 건너뛰었다면 수동으로 설정할 수 있습니다:
 - **비영어:** `~/.claude/rules/language.md`를 생성하여 원하는 언어 지정
@@ -72,8 +83,15 @@ Perplexity를 설치 시 건너뛰었다면 나중에 수동으로 설정할 수
 
 > **Note:** 설치 스크립트가 기존 `~/.claude` 설정을 자동으로 백업(`~/.claude-backup-{timestamp}`)합니다.
 
-### 5. 프로젝트 초기화
+### 6. 프로젝트 초기화
 > **Tip:** `claude` 실행 전, 이 저장소의 `project-templates/`를 참고해 프로젝트를 초기화하세요. (`install.sh`는 `project-templates`를 `~/.claude`로 복사하지 않습니다.)
+
+### 7. 설치 확인
+```bash
+npx claude-pro-minmax@latest doctor
+# 또는 (전역 설치한 경우)
+cpmm doctor
+```
 
 ---
 

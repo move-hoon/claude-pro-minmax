@@ -28,18 +28,29 @@ CPMM helps Pro users complete more verified tasks before reset through model rou
 ### 1. Prerequisites
 ```bash
 npm install -g @anthropic-ai/claude-code
-npm install -g @mixedbread/mgrep
+npm install -g @mixedbread/mgrep  # optional, recommended: ~50% output reduction
 mgrep install-claude-code
 brew install jq   # macOS (Linux: sudo apt-get install jq)
 brew install tmux # optional: required for /watch (Linux: sudo apt-get install tmux)
 ```
 
-### 2. One-Line Install
+### 2. npm / npx Install (Recommended)
+```bash
+npx claude-pro-minmax@latest install
+```
+
+Or install globally:
+```bash
+npm install -g claude-pro-minmax
+cpmm install
+```
+
+### 3. One-Line Install (curl)
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/move-hoon/claude-pro-minmax/main/install.sh)"
 ```
 
-### 3. Manual Install
+### 4. Manual Install
 ```bash
 git clone https://github.com/move-hoon/claude-pro-minmax.git
 cd claude-pro-minmax
@@ -47,7 +58,7 @@ less install.sh
 bash install.sh
 ```
 
-### 4. Post-Install Configuration (Optional)
+### 5. Post-Install Configuration (Optional)
 **The installation script will ask for your Perplexity API Key and output language.**
 If you skipped language selection, you can configure it manually:
 - **Non-English:** Create `~/.claude/rules/language.md` with your preferred language
@@ -72,8 +83,15 @@ If you skipped Perplexity setup during installation, you can set it up manually:
 
 > **Note:** The installation script automatically backs up your existing `~/.claude` settings (`~/.claude-backup-{timestamp}`).
 
-### 5. Project Initialization
+### 6. Project Initialization
 > **Tip:** Before running `claude`, initialize your project by referencing templates in this repository's `project-templates/` directory. (`install.sh` does not copy `project-templates` into `~/.claude`.)
+
+### 7. Verify Installation
+```bash
+npx claude-pro-minmax@latest doctor
+# or (if installed globally)
+cpmm doctor
+```
 
 ---
 
