@@ -1,6 +1,6 @@
 {
   "name": "claude-pro-minmax",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Quota-first routing and safety layer for Claude Code Pro workflows.",
   "author": "donghoon <move-hoon@users.noreply.github.com>",
   "license": "MIT",

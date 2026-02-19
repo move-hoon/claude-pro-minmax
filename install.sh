@@ -30,9 +30,6 @@ mkdir -p ~/.claude/{agents,commands,rules,skills/cli-wrappers/references,context
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cp "$SCRIPT_DIR/.claude/CLAUDE.md" ~/.claude/
 cp "$SCRIPT_DIR/.claude/settings.json" ~/.claude/
-if [ -f "$SCRIPT_DIR/.claudeignore" ]; then
-    cp "$SCRIPT_DIR/.claudeignore" ~/.claude/
-fi
 # Copy settings.local.json from example template (users customize after install)
 if [ -f "$SCRIPT_DIR/.claude/settings.local.example.json" ]; then
     cp "$SCRIPT_DIR/.claude/settings.local.example.json" ~/.claude/settings.local.json
@@ -71,28 +68,30 @@ if [ -f "$SCRIPT_DIR/.claude.json" ]; then
     echo "✅ Created .mcp.json → .claude.json symlink (Ensured Link)"
     # Interactive Perplexity Setup (Read from /dev/tty for curl support)
     if [ -t 0 ] || [ -c /dev/tty ]; then
-        echo ""
-        echo "🔍 Perplexity API Setup (Recommended for /dplan)"
-        echo -n "   Enter your API Key (Press Enter to skip): "
-        read -rs PERPLEXITY_KEY < /dev/tty || PERPLEXITY_KEY=""
-        echo "" # Newline for silent read
-
-        if [ -n "$PERPLEXITY_KEY" ]; then
-            # Enable Perplexity (Rename key and inject API Key)
-            # Use jq for reliable JSON editing
-            jq --arg key "$PERPLEXITY_KEY" \
-               '.mcpServers.perplexity = .mcpServers._perplexity_disabled_by_default |
-                .mcpServers.perplexity.env.PERPLEXITY_API_KEY = $key |
-                del(.mcpServers._perplexity_disabled_by_default)' \
-               ~/.claude.json > ~/.claude.json.tmp && mv ~/.claude.json.tmp ~/.claude.json
-            echo "✅ Perplexity API Key configured!"
+        if ! command -v jq &> /dev/null; then
+            echo "⚠️  Skipping Perplexity setup (jq not installed). Install jq and re-run to configure."
         else
-            # Skip: Completely remove the disabled block to keep config clean
-            echo "⚠️  Skipping Perplexity setup. Disabling feature..."
-            jq 'del(.mcpServers._perplexity_disabled_by_default)' ~/.claude.json > ~/.claude.json.tmp && mv ~/.claude.json.tmp ~/.claude.json
-            echo "   (Feature removed from config. Add manually to functionality if needed)"
+            echo ""
+            echo "🔍 Perplexity API Setup (Recommended for /dplan)"
+            echo -n "   Enter your API Key (Press Enter to skip): "
+            read -rs PERPLEXITY_KEY < /dev/tty || PERPLEXITY_KEY=""
+            echo "" # Newline for silent read
+
+            if [ -n "$PERPLEXITY_KEY" ]; then
+                # Enable Perplexity (Rename key and inject API Key)
+                jq --arg key "$PERPLEXITY_KEY" \
+                   '.mcpServers.perplexity = .mcpServers._perplexity_disabled_by_default |
+                    .mcpServers.perplexity.env.PERPLEXITY_API_KEY = $key |
+                    del(.mcpServers._perplexity_disabled_by_default)' \
+                   ~/.claude.json > ~/.claude.json.tmp && mv ~/.claude.json.tmp ~/.claude.json
+                echo "✅ Perplexity API Key configured!"
+            else
+                # Skip: Completely remove the disabled block to keep config clean
+                echo "⚠️  Skipping Perplexity setup. Disabling feature..."
+                jq 'del(.mcpServers._perplexity_disabled_by_default)' ~/.claude.json > ~/.claude.json.tmp && mv ~/.claude.json.tmp ~/.claude.json
+                echo "   (Feature removed from config. Add manually to functionality if needed)"
+            fi
         fi
-        # No temp file cleanup needed for jq approach as we mv content
     fi
 fi
 
