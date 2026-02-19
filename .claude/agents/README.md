@@ -11,8 +11,8 @@ Contains sub-agent definitions for role-based task delegation with model optimiz
 
 | Agent | Model | Role | Tools | Questions |
 |-------|-------|------|-------|-----------|
-| `planner.md` | Sonnet 4.5 | Architecture & design decisions | Read, Glob, Grep (read-only) | ≤3 (with defaults) |
-| `dplanner.md` | Sonnet 4.5 | Deep planning with research | sequential-thinking, perplexity, context7, Read, Glob, Grep | Unlimited |
+| `planner.md` | Sonnet 4.6 | Architecture & design decisions | Read, Glob, Grep (read-only) | ≤3 (with defaults) |
+| `dplanner.md` | Sonnet 4.6 | Deep planning with research | sequential-thinking, perplexity, context7, Read, Glob, Grep | Unlimited |
 | `builder.md` | Haiku 4.5 | Implementation (2-retry cap) | Read, Write, Edit, Bash, Glob, Grep | None → Escalate |
 | `reviewer.md` | Haiku 4.5 | Code review & QA | Read, Glob, Grep (read-only, enforced) | None → Escalate |
 
@@ -90,7 +90,7 @@ flowchart TD
     %% Branch 1: Planning (Requires Approval)
     subgraph Planning ["Phase 1: Planning"]
         direction TB
-        Cmd -->|/plan| Planner[/"@planner (Sonnet 4.5)"/]
+        Cmd -->|/plan| Planner[/"@planner (Sonnet 4.6)"/]
         Cmd -->|/dplan| DPlanner[/"Deep Planner"/]
         Planner & DPlanner --> Spec[Build Spec]
     end
@@ -122,7 +122,7 @@ flowchart TD
     %% Branch 3: Escalation (Model Upgrade)
     Verify -- "Fail (x2)" --> Pop["git stash pop"]
     Pop --> Escalate(STOP & Suggest)
-    Escalate -.->|"/do-sonnet"| SonnetExec["Sonnet 4.5 (Direct)"]
+    Escalate -.->|"/do-sonnet"| SonnetExec["Sonnet 4.6 (Direct)"]
     SonnetExec --> Verify
 
     %% Branch 4: Completion
@@ -151,8 +151,8 @@ flowchart TD
 |----------|-----------|
 | 4 agents (vs. Affaan's 13) | Pro Plan constraint: Each sub-agent invocation costs quota. Role consolidation reduces API overhead while maintaining capability |
 | Haiku 4.5 for @builder and @reviewer | Cost optimization: Implementation and review don't need Sonnet-level reasoning. Haiku 4.5 is 5x cheaper ($1 vs $5 /MTok input) |
-| Sonnet 4.5 for @planner and @dplanner | Architecture decisions need reasoning capability. Sonnet 4.5 balances cost/performance better than Opus 4.6 on Pro Plan |
-| @builder 2-retry cap | Prevents quota drain. Failed twice → Escalate to Sonnet 4.5/Opus 4.6 or @planner for re-design |
+| Sonnet 4.6 for @planner and @dplanner | Architecture decisions need reasoning capability. Sonnet 4.6 balances cost/performance better than Opus 4.6 on Pro Plan |
+| @builder 2-retry cap | Prevents quota drain. Failed twice → Escalate to Sonnet 4.6/Opus 4.6 or @planner for re-design |
 | @reviewer read-only enforcement | Hook-based blocking (`readonly-check.sh`). Prevents accidental modifications during review |
 | @dplanner with MCP tools | Research-heavy tasks justify MCP overhead. `sequential-thinking` + `perplexity` + `context7` enable fail-proof planning |
 | Output Budget per agent | Output costs 5x Input (API pricing). Strict budgets: builder 5 lines, reviewer 1 line PASS / 30 lines FAIL, dplanner 60 lines, planner 1 sentence/task |

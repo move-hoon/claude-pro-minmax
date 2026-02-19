@@ -81,13 +81,13 @@ If you skipped Perplexity setup during installation, you can set it up manually:
 
 ### 🤖 Agent Workflow
 
-CPMM provides layered model routing: `/plan` chains @planner (Sonnet 4.5) → @builder (Haiku 4.5) for complex tasks, while `/do` executes directly in the current session model for speed.
+CPMM provides layered model routing: `/plan` chains @planner (Sonnet 4.6) → @builder (Haiku 4.5) for complex tasks, while `/do` executes directly in the current session model for speed.
 
 ```mermaid
 flowchart LR
     Start([User Request]) --> Cmd{Command?}
 
-    Cmd -->|/plan| Plan[/"@planner (Sonnet 4.5)"/]
+    Cmd -->|/plan| Plan[/"@planner (Sonnet 4.6)"/]
     Cmd -->|/do| Snap["📸 git stash push"]
 
     Snap --> Exec["Session Model (Direct)"]
@@ -99,7 +99,7 @@ flowchart LR
     DropPlan --> Review[/"@reviewer (Haiku 4.5)"/]
     Exec -- "Failure (2x)" --> Pop["⏪ git stash pop"]
     Build -- "Failure (2x)" --> Pop
-    Pop --> Escalate("🚨 Escalate to Sonnet 4.5")
+    Pop --> Escalate("🚨 Escalate to Sonnet 4.6")
 
     Verify --> Done
     Review --> Done
@@ -133,7 +133,7 @@ Essential commands used most frequently.
 | Command | Description | Recommended Situation |
 | --- | --- | --- |
 | `/do [task]` | Rapid implementation (session model) | Simple bug fixes, script writing |
-| `/plan [task]` | **Sonnet 4.5** Design → **Haiku 4.5** Implementation | Feature additions, refactoring, complex logic |
+| `/plan [task]` | **Sonnet 4.6** Design → **Haiku 4.5** Implementation | Feature additions, refactoring, complex logic |
 | `/review [target]` | **Haiku 4.5** (Read-only) | Code review (Specify file or directory) |
 
 > **Cost Optimization Tip:** Set your session model to Haiku (`/model haiku`) before using `/do` for simple tasks — same **1/5 API input-token price** as @builder. Use `/do-sonnet` or `/plan` for complex tasks.
@@ -146,8 +146,8 @@ Full command list for more sophisticated tasks or session management.
 | Command | Description | Recommended Situation |
 | :--- | :--- | :--- |
 | **🧠 Deep Execution** | | |
-| `/dplan [task]` | **Sonnet 4.5** + Perplexity, Sequential Thinking, Context7 | Library comparison, latest tech research (Deep Research) |
-| `/do-sonnet` | Execute directly with **Sonnet 4.5** | Manual escalation when Haiku 4.5 keeps failing |
+| `/dplan [task]` | **Sonnet 4.6** + Perplexity, Sequential Thinking, Context7 | Library comparison, latest tech research (Deep Research) |
+| `/do-sonnet` | Execute directly with **Sonnet 4.6** | Manual escalation when Haiku 4.5 keeps failing |
 | `/do-opus` | Execute directly with **Opus 4.6** | Resolving extremely complex problems (Cost caution) |
 | **💾 Session/Context** | | |
 | `/session-save` | Summarize and save session | When pausing work (Auto-removal of secrets) |
@@ -226,8 +226,8 @@ claude-pro-minmax
 │   ├── settings.json           # Project Settings (Permissions, hooks, env vars)
 │   ├── settings.local.example.json # Template for ~/.claude/settings.local.json
 │   ├── agents/                 # Agent Definitions
-│   │   ├── planner.md          # Sonnet 4.5: Architecture and design decisions
-│   │   ├── dplanner.md         # Sonnet 4.5+MCP: Deep planning utilizing external tools
+│   │   ├── planner.md          # Sonnet 4.6: Architecture and design decisions
+│   │   ├── dplanner.md         # Sonnet 4.6+MCP: Deep planning utilizing external tools
 │   │   ├── builder.md          # Haiku 4.5: Code implementation and refactoring
 │   │   └── reviewer.md         # Haiku 4.5: Read-only code review
 │   ├── commands/               # Slash Commands
@@ -378,7 +378,7 @@ A: macOS and Linux are supported. Windows is available through WSL.
 <details>
 <summary><strong>Q: Why not use Opus for all tasks?</strong></summary>
 
-A: API pricing (reflecting compute cost), Opus 4.6 ($5/MTok input) is much more expensive than Sonnet 4.5 ($3/MTok) or Haiku 4.5 ($1/MTok). While the exact Pro Plan quota impact is not public, using Opus 4.6 for all tasks would deplete the quota much faster. Explicit model selection (`/do-opus`) is used to ensure awareness when using expensive models.
+A: API pricing (reflecting compute cost), Opus 4.6 ($5/MTok input) is much more expensive than Sonnet 4.6 ($3/MTok) or Haiku 4.5 ($1/MTok). While the exact Pro Plan quota impact is not public, using Opus 4.6 for all tasks would deplete the quota much faster. Explicit model selection (`/do-opus`) is used to ensure awareness when using expensive models.
 </details>
 
 <details>

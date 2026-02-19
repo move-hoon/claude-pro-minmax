@@ -11,8 +11,8 @@
 
 | 에이전트 | 모델 | 역할 | 도구 | 질문 |
 |---------|------|------|------|------|
-| `planner.md` | Sonnet 4.5 | 아키텍처 및 설계 결정 | Read, Glob, Grep (읽기 전용) | ≤3 (기본값 포함) |
-| `dplanner.md` | Sonnet 4.5 | 연구 기반 심층 계획 | sequential-thinking, perplexity, context7, Read, Glob, Grep | 무제한 |
+| `planner.md` | Sonnet 4.6 | 아키텍처 및 설계 결정 | Read, Glob, Grep (읽기 전용) | ≤3 (기본값 포함) |
+| `dplanner.md` | Sonnet 4.6 | 연구 기반 심층 계획 | sequential-thinking, perplexity, context7, Read, Glob, Grep | 무제한 |
 | `builder.md` | Haiku 4.5 | 구현 (2-retry cap) | Read, Write, Edit, Bash, Glob, Grep | 없음 → 에스컬레이션 |
 | `reviewer.md` | Haiku 4.5 | 코드 검토 및 QA | Read, Glob, Grep (읽기 전용, 강제) | 없음 → 에스컬레이션 |
 
@@ -90,7 +90,7 @@ flowchart TD
     %% Branch 1: Planning (Requires Approval)
     subgraph Planning ["Phase 1: Planning"]
         direction TB
-        Cmd -->|/plan| Planner[/"@planner (Sonnet 4.5)"/]
+        Cmd -->|/plan| Planner[/"@planner (Sonnet 4.6)"/]
         Cmd -->|/dplan| DPlanner[/"Deep Planner"/]
         Planner & DPlanner --> Spec[Build Spec]
     end
@@ -122,7 +122,7 @@ flowchart TD
     %% Branch 3: Escalation (Model Upgrade)
     Verify -- "Fail (x2)" --> Pop["git stash pop"]
     Pop --> Escalate(STOP & Suggest)
-    Escalate -.->|"/do-sonnet"| SonnetExec["Sonnet 4.5 (Direct)"]
+    Escalate -.->|"/do-sonnet"| SonnetExec["Sonnet 4.6 (Direct)"]
     SonnetExec --> Verify
 
     %% Branch 4: Completion
@@ -151,8 +151,8 @@ flowchart TD
 |------|------|
 | 4개 에이전트 (vs. Affaan 13개) | Pro Plan 제약: 서브에이전트 호출마다 quota 소비. 역할 통합으로 API 오버헤드 감소하면서도 기능 유지 |
 | @builder와 @reviewer에 Haiku 4.5 사용 | 비용 최적화: 구현과 검토는 Sonnet 수준의 추론이 불필요. Haiku 4.5는 5배 저렴 ($1 vs $5 /MTok input) |
-| @planner와 @dplanner에 Sonnet 4.5 사용 | 아키텍처 결정은 추론 능력 필요. Pro Plan에서 Sonnet 4.5가 Opus 4.6보다 가성비 우수 |
-| @builder 2-retry cap | Quota 소진 방지. 2회 실패 → Sonnet 4.5/Opus 4.6으로 에스컬레이션 또는 @planner로 재설계 |
+| @planner와 @dplanner에 Sonnet 4.6 사용 | 아키텍처 결정은 추론 능력 필요. Pro Plan에서 Sonnet 4.6가 Opus 4.6보다 가성비 우수 |
+| @builder 2-retry cap | Quota 소진 방지. 2회 실패 → Sonnet 4.6/Opus 4.6으로 에스컬레이션 또는 @planner로 재설계 |
 | @reviewer 읽기 전용 강제 | Hook 기반 차단(`readonly-check.sh`). 검토 중 실수로 수정하는 것 방지 |
 | @dplanner에 MCP 도구 제공 | 연구가 많은 작업은 MCP 오버헤드 정당화 가능. `sequential-thinking` + `perplexity` + `context7`로 실패 없는 계획 가능 |
 | 에이전트별 출력 예산 | Output은 Input의 5배 비용 (API 가격). 엄격한 예산: builder 5줄, reviewer 1줄 PASS / 30줄 FAIL, dplanner 60줄, planner 1문장/작업 |

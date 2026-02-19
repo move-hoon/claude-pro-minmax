@@ -81,13 +81,13 @@ Perplexity를 설치 시 건너뛰었다면 나중에 수동으로 설정할 수
 
 ### 🤖 에이전트 워크플로우
 
-CPMM은 계층적 모델 라우팅을 제공합니다: `/plan`은 @planner (Sonnet 4.5) → @builder (Haiku 4.5) 체인으로 복잡한 작업을 처리하고, `/do`는 현재 세션 모델에서 직접 실행하여 속도를 높입니다.
+CPMM은 계층적 모델 라우팅을 제공합니다: `/plan`은 @planner (Sonnet 4.6) → @builder (Haiku 4.5) 체인으로 복잡한 작업을 처리하고, `/do`는 현재 세션 모델에서 직접 실행하여 속도를 높입니다.
 
 ```mermaid
 flowchart LR
     Start([User Request]) --> Cmd{Command?}
 
-    Cmd -->|/plan| Plan[/"@planner (Sonnet 4.5)"/]
+    Cmd -->|/plan| Plan[/"@planner (Sonnet 4.6)"/]
     Cmd -->|/do| Snap["📸 git stash push"]
 
     Snap --> Exec["Session Model (Direct)"]
@@ -99,7 +99,7 @@ flowchart LR
     DropPlan --> Review[/"@reviewer (Haiku 4.5)"/]
     Exec -- "Failure (2x)" --> Pop["⏪ git stash pop"]
     Build -- "Failure (2x)" --> Pop
-    Pop --> Escalate("🚨 Escalate to Sonnet 4.5")
+    Pop --> Escalate("🚨 Escalate to Sonnet 4.6")
 
     Verify --> Done
     Review --> Done
@@ -133,7 +133,7 @@ flowchart LR
 | 명령어 | 설명 | 추천 상황 |
 | --- | --- | --- |
 | `/do [작업]` | 빠른 구현 (세션 모델) | 간단한 버그 수정, 스크립트 작성 |
-| `/plan [작업]` | **Sonnet 4.5** 설계 → **Haiku 4.5** 구현 | 기능 추가, 리팩토링, 복잡한 로직 |
+| `/plan [작업]` | **Sonnet 4.6** 설계 → **Haiku 4.5** 구현 | 기능 추가, 리팩토링, 복잡한 로직 |
 | `/review [대상]` | **Haiku 4.5** (읽기 전용) | 코드 리뷰 (파일 또는 디렉토리 지정 가능) |
 
 > **비용 최적화 Tip:** 간단한 작업에 `/do`를 사용하기 전 세션 모델을 Haiku로 설정하세요 (`/model haiku`) — @builder와 동일한 **API 입력 토큰 단가 기준 1/5**. 복잡한 작업에는 `/do-sonnet` 또는 `/plan`을 사용하세요.
@@ -146,8 +146,8 @@ flowchart LR
 | 명령어 | 설명 | 추천 상황 |
 | :--- | :--- | :--- |
 | **🧠 심층 실행** | | |
-| `/dplan [작업]` | **Sonnet 4.5** + Perplexity, Sequential Thinking, Context7 | 라이브러리 비교, 최신 기술 조사 (심층 연구) |
-| `/do-sonnet` | **Sonnet 4.5**로 직접 실행 | Haiku 4.5가 계속 실패할 때 수동 격상 |
+| `/dplan [작업]` | **Sonnet 4.6** + Perplexity, Sequential Thinking, Context7 | 라이브러리 비교, 최신 기술 조사 (심층 연구) |
+| `/do-sonnet` | **Sonnet 4.6**로 직접 실행 | Haiku 4.5가 계속 실패할 때 수동 격상 |
 | `/do-opus` | **Opus 4.6**으로 직접 실행 | 매우 복잡한 문제 해결 (비용 주의) |
 | **💾 세션/컨텍스트** | | |
 | `/session-save` | 세션 요약 및 저장 | 작업 중단 시 (시크릿 자동 제거) |
@@ -226,8 +226,8 @@ claude-pro-minmax
 │   ├── settings.json           # 프로젝트 설정 (권한, 훅, 환경변수)
 │   ├── settings.local.example.json # ~/.claude/settings.local.json용 템플릿
 │   ├── agents/                 # 에이전트 정의
-│   │   ├── planner.md          # Sonnet 4.5: 아키텍처 및 설계 결정
-│   │   ├── dplanner.md         # Sonnet 4.5+MCP: 외부 도구를 활용한 심층 계획
+│   │   ├── planner.md          # Sonnet 4.6: 아키텍처 및 설계 결정
+│   │   ├── dplanner.md         # Sonnet 4.6+MCP: 외부 도구를 활용한 심층 계획
 │   │   ├── builder.md          # Haiku 4.5: 코드 구현 및 리팩토링
 │   │   └── reviewer.md         # Haiku 4.5: 읽기 전용 코드 리뷰
 │   ├── commands/               # 슬래시 명령어
@@ -378,7 +378,7 @@ A: macOS와 Linux를 지원합니다. Windows는 WSL을 통해 사용 가능합�
 <details>
 <summary><strong>Q: 왜 모든 작업에 Opus를 사용하지 않나요?</strong></summary>
 
-A: API 가격(컴퓨팅 비용 반영)을 보면 Opus 4.6 ($5/MTok input)은 Sonnet 4.5 ($3/MTok)나 Haiku 4.5 ($1/MTok)보다 훨씬 비쌉니다. 정확한 Pro Plan quota 영향은 공개되지 않았지만, 모든 작업에 Opus 4.6을 사용하면 quota가 훨씬 빠르게 소진될 것입니다. 명시적 모델 선택(`/do-opus`)으로 비싼 모델 사용 시 인지할 수 있도록 합니다.
+A: API 가격(컴퓨팅 비용 반영)을 보면 Opus 4.6 ($5/MTok input)은 Sonnet 4.6 ($3/MTok)나 Haiku 4.5 ($1/MTok)보다 훨씬 비쌉니다. 정확한 Pro Plan quota 영향은 공개되지 않았지만, 모든 작업에 Opus 4.6을 사용하면 quota가 훨씬 빠르게 소진될 것입니다. 명시적 모델 선택(`/do-opus`)으로 비싼 모델 사용 시 인지할 수 있도록 합니다.
 </details>
 
 <details>

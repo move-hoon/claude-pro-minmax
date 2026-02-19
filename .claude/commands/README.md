@@ -32,10 +32,10 @@ Contains slash command definitions for common workflows.
 | Command | When to Use | Resource Usage |
 |---------|-------------|----------------|
 | `/do` | Simple-to-medium tasks (1-3 files). Atomic batch with rollback on failure | Minimal (session model) |
-| `/do-sonnet` | Complex logic requiring deeper reasoning | Moderate (Sonnet 4.5) |
+| `/do-sonnet` | Complex logic requiring deeper reasoning | Moderate (Sonnet 4.6) |
 | `/do-opus` | Critical decisions, Sonnet failed | Higher (Opus 4.6—API pricing reflects cost) |
-| `/plan` | Multi-file tasks, architecture decisions | Moderate (Sonnet 4.5 → Haiku 4.5 chain) |
-| `/dplan` | Research-heavy, complex architecture | Higher (Sonnet 4.5 + MCP tools) |
+| `/plan` | Multi-file tasks, architecture decisions | Moderate (Sonnet 4.6 → Haiku 4.5 chain) |
+| `/dplan` | Research-heavy, complex architecture | Higher (Sonnet 4.6 + MCP tools) |
 
 ### Quality Assurance
 | Command | When to Use | Resource Usage |
@@ -89,7 +89,7 @@ Contains slash command definitions for common workflows.
 # 3. Manual review if needed
 /review src/auth/
 ```
-**Quota:** Medium (Sonnet 4.5 planning + Haiku 4.5 implementation + Haiku 4.5 review)
+**Quota:** Medium (Sonnet 4.6 planning + Haiku 4.5 implementation + Haiku 4.5 review)
 
 ### Research-Heavy Architecture
 ```bash
@@ -102,7 +102,7 @@ Contains slash command definitions for common workflows.
 # 3. Implement based on research findings
 # (Use /plan or /do based on complexity)
 ```
-**Quota:** High (Sonnet 4.5 + Sequential Thinking + Perplexity + Context7)
+**Quota:** High (Sonnet 4.6 + Sequential Thinking + Perplexity + Context7)
 
 ### Debugging & Learning
 ```bash
@@ -138,7 +138,7 @@ Contains slash command definitions for common workflows.
 
 | Aspect | /do | /do-sonnet | /do-opus | /plan | /dplan |
 |--------|-----|------------|----------|-------|--------|
-| **Model** | Session model | Sonnet 4.5 | Opus 4.6 | Sonnet 4.5 → Haiku 4.5 | Sonnet 4.5 + MCP |
+| **Model** | Session model | Sonnet 4.6 | Opus 4.6 | Sonnet 4.6 → Haiku 4.5 | Sonnet 4.6 + MCP |
 | **Relative Cost** | Low | Medium | High | Medium-High | Highest |
 | **Planning** | Internal (batch) | Internal (batch) | Internal (batch) | Architecture design | Deep research |
 | **Use Case** | Simple tasks | Complex logic | Critical decisions | Multi-file features | Unknown unknowns |
