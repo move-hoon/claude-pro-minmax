@@ -5,6 +5,7 @@
 - `/usage`: 각 실행의 `Δusage`만 기록
 - `ccusage session`: `Input`, `Output`, `Cache Create (cache output)`, `Cache Read`, `Total Tokens`, `Cost`
 - `ccusage` 수치: 각 시점의 session 리포트 값 (conversation session 기준)
+- Opus 실행 설정: 이 아카이브의 Opus 4.6 실행은 effort mode를 `medium`으로 고정하여 수행함.
 
 ## 2) 비교 파일 크기 실측 (`wc -l -w -c`, 실행 대상)
 

@@ -5,6 +5,7 @@
 - `/usage`: only `Δusage` is reported per run
 - `ccusage session`: `Input`, `Output`, `Cache Create (cache output)`, `Cache Read`, `Total Tokens`, `Cost`
 - `ccusage` values: session report values at each measurement point (conversation-session grouped)
+- Opus runtime setting: all Opus 4.6 runs in this archive were executed with effort mode set to `medium`.
 
 ## 2) Measured File Sizes (`wc -l -w -c`, executed files)
 
