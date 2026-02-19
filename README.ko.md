@@ -91,15 +91,18 @@ flowchart LR
     Cmd -->|/do| Snap["📸 git stash push"]
 
     Snap --> Exec["Session Model (Direct)"]
+    Plan -->|"--no-build"| Done([Done])
     Plan -->|Blueprint| Build[/"@builder (Haiku 4.5)"/]
-    Exec -- "Success" --> Drop["🗑️ git stash drop"]
-    Build -- "Success" --> Drop
-    Drop --> Review[/"@reviewer (Haiku 4.5)"/]
+    Exec -- "Success" --> DropDo["🗑️ git stash drop"]
+    Build -- "Success" --> DropPlan["🗑️ git stash drop"]
+    DropDo --> Verify["✅ verify.sh"]
+    DropPlan --> Review[/"@reviewer (Haiku 4.5)"/]
     Exec -- "Failure (2x)" --> Pop["⏪ git stash pop"]
     Build -- "Failure (2x)" --> Pop
     Pop --> Escalate("🚨 Escalate to Sonnet 4.5")
 
-    Review --> Done([Done])
+    Verify --> Done
+    Review --> Done
     Escalate -.-> Review
 
     classDef planner fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px;
@@ -109,14 +112,16 @@ flowchart LR
     classDef done fill:#e0e0e0,stroke:#9e9e9e,stroke-width:2px,font-weight:bold;
     classDef snapshot fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px;
     classDef direct fill:#fff9c4,stroke:#f9a825,stroke-width:2px;
+    classDef verify fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
 
     class Plan planner;
     class Build builder;
     class Review reviewer;
     class Escalate escalate;
     class Done done;
-    class Snap,Drop,Pop snapshot;
+    class Snap,DropDo,DropPlan,Pop snapshot;
     class Exec direct;
+    class Verify verify;
 ```
 
 ### ⌨️ 명령어 가이드
