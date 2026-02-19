@@ -23,7 +23,7 @@ $ARGUMENTS
 3. Results returned to main conversation
 4. User confirmation (no auto-proceed)
 5. @builder: Implementation (after approval)
-6. (Optional) @reviewer: Review
+6. @reviewer: Post-implementation review (skipped if --no-build)
 
 ## When to Use
 - Affecting 4+ files
