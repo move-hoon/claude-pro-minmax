@@ -24,8 +24,12 @@ _run() {
 
 _has_script() {
   local script="$1"
-  [[ -f "$PROJECT_DIR/package.json" ]] && \
+  [[ -f "$PROJECT_DIR/package.json" ]] || return 1
+  if command -v jq &>/dev/null; then
+    jq -e ".scripts.\"$script\"" "$PROJECT_DIR/package.json" &>/dev/null
+  else
     grep -q "\"$script\":" "$PROJECT_DIR/package.json" 2>/dev/null
+  fi
 }
 
 adapter_info() {
@@ -34,71 +38,85 @@ adapter_info() {
 }
 
 adapter_verify() {
-  # Type check if TypeScript
-  if [[ -f "$PROJECT_DIR/tsconfig.json" ]]; then
-    npx tsc --noEmit 2>/dev/null || true
-  fi
-  
-  # Lint
-  if _has_script "lint"; then
-    _run run lint 2>/dev/null || true
-  elif [[ -f "$PROJECT_DIR/.eslintrc.js" ]] || [[ -f "$PROJECT_DIR/.eslintrc.json" ]] || [[ -f "$PROJECT_DIR/eslint.config.js" ]] || [[ -f "$PROJECT_DIR/eslint.config.mjs" ]]; then
-    npx eslint . 2>/dev/null || true
-  fi
-  
-  # Test
-  if _has_script "test"; then
-    _run test 2>/dev/null || true
-  fi
+  ( cd "$PROJECT_DIR"
+    # Type check if TypeScript
+    if [[ -f tsconfig.json ]]; then
+      npx --no-install tsc --noEmit 2>&1 || true
+    fi
+
+    # Lint
+    if _has_script "lint"; then
+      _run run lint 2>&1 || true
+    elif [[ -f .eslintrc.js ]] || [[ -f .eslintrc.json ]] || [[ -f eslint.config.js ]] || [[ -f eslint.config.mjs ]]; then
+      npx --no-install eslint . 2>&1 || true
+    fi
+
+    # Test
+    if _has_script "test"; then
+      _run test 2>&1 || true
+    fi
+  )
 }
 
 adapter_build() {
-  if _has_script "build"; then
-    _run run build
-  else
-    echo "No build script found in package.json"
-  fi
+  ( cd "$PROJECT_DIR"
+    if _has_script "build"; then
+      _run run build
+    else
+      echo "No build script found in package.json"
+    fi
+  )
 }
 
 adapter_test() {
-  if _has_script "test"; then
-    _run test
-  elif [[ -f "$PROJECT_DIR/vitest.config.ts" ]] || [[ -f "$PROJECT_DIR/vitest.config.js" ]]; then
-    npx vitest run
-  elif [[ -f "$PROJECT_DIR/jest.config.js" ]] || [[ -f "$PROJECT_DIR/jest.config.ts" ]]; then
-    npx jest
-  else
-    echo "No test runner found"
-  fi
+  ( cd "$PROJECT_DIR"
+    if _has_script "test"; then
+      _run test
+    elif [[ -f vitest.config.ts ]] || [[ -f vitest.config.js ]]; then
+      npx --no-install vitest run
+    elif [[ -f jest.config.js ]] || [[ -f jest.config.ts ]]; then
+      npx --no-install jest
+    else
+      echo "No test runner found"
+    fi
+  )
 }
 
 adapter_lint() {
-  if _has_script "lint"; then
-    _run run lint
-  else
-    npx eslint . 2>/dev/null || true
-  fi
+  ( cd "$PROJECT_DIR"
+    if _has_script "lint"; then
+      _run run lint
+    else
+      npx --no-install eslint . 2>&1 || true
+    fi
+  )
 }
 
 adapter_format() {
-  if _has_script "format"; then
-    _run run format
-  else
-    npx prettier --write . 2>/dev/null || true
-  fi
+  ( cd "$PROJECT_DIR"
+    if _has_script "format"; then
+      _run run format
+    else
+      npx --no-install prettier --write . 2>&1 || true
+    fi
+  )
 }
 
 adapter_run() {
-  if _has_script "dev"; then
-    _run run dev
-  elif _has_script "start"; then
-    _run start
-  else
-    echo "No dev or start script found"
-  fi
+  ( cd "$PROJECT_DIR"
+    if _has_script "dev"; then
+      _run run dev
+    elif _has_script "start"; then
+      _run start
+    else
+      echo "No dev or start script found"
+    fi
+  )
 }
 
 adapter_clean() {
-  rm -rf node_modules dist build .next out .nuxt .output .turbo 2>/dev/null || true
-  echo "Cleaned node_modules, dist, build, .next, out"
+  ( cd "$PROJECT_DIR"
+    rm -rf node_modules dist build .next out .nuxt .output .turbo 2>&1 || true
+    echo "Cleaned node_modules, dist, build, .next, out, .nuxt, .output, .turbo"
+  )
 }
