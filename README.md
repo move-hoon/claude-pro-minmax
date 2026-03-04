@@ -27,41 +27,52 @@ CPMM helps Pro users complete more verified tasks before reset through model rou
 
 ## 🛠 Installation
 
-### 1. Prerequisites
-```bash
-npm install -g @anthropic-ai/claude-code
-npm install -g @mixedbread/mgrep  # optional, recommended: ~50% output reduction
-mgrep install-claude-code
-brew install jq   # macOS (Linux: sudo apt-get install jq)
-brew install tmux # optional: required for /watch (Linux: sudo apt-get install tmux)
-```
-
-### 2. npm / npx Install (Recommended)
-```bash
-npx claude-pro-minmax@latest install
-```
-
-Or install globally:
+### 1. Quick Start (Recommended)
 ```bash
 npm install -g claude-pro-minmax
 cpmm install
 ```
 
-### 3. One-Line Install (curl)
+Alternative (no global install):
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/move-hoon/claude-pro-minmax/main/install.sh)"
+npx claude-pro-minmax@latest install
 ```
 
-### 4. Manual Install
+### 2. Dependency Setup (Required/Optional)
+```bash
+cpmm setup --check
+# auto-fix missing dependencies (non-interactive)
+cpmm setup --fix --yes
+```
+
+- `required`: `claude`, `jq`
+- `optional`: `mgrep`, `tmux`
+
+### 3. Manual Dependency Setup (Advanced)
+```bash
+# required
+npm install -g @anthropic-ai/claude-code
+brew install jq                 # macOS
+sudo apt-get install jq         # Linux
+
+# optional
+npm install -g @mixedbread/mgrep
+mgrep install-claude-code
+brew install tmux               # macOS
+sudo apt-get install tmux       # Linux
+```
+
+### 4. Manual Install From Source
 ```bash
 git clone https://github.com/move-hoon/claude-pro-minmax.git
 cd claude-pro-minmax
-less install.sh
-bash install.sh
+node bin/cpmm.js install
+# advanced/debug path (same underlying installer):
+# bash install.sh
 ```
 
 ### 5. Post-Install Configuration (Optional)
-**The installation script will ask for your Perplexity API Key and output language.**
+**On fresh interactive installs, `cpmm install` asks for your Perplexity API Key and output language.**
 If you skipped language selection, you can configure it manually:
 - **Non-English:** Create `~/.claude/rules/language.md` with your preferred language
 - **English (default):** No file needed. Remove `~/.claude/rules/language.md` if it exists
@@ -83,16 +94,18 @@ If you skipped Perplexity setup during installation, you can set it up manually:
 > - **Sequential Thinking**: Powerful reasoning tool for complex logic.
 > - **Context7**: Advanced documentation fetching and context management.
 
-> **Note:** The installation script automatically backs up your existing `~/.claude` settings (`~/.claude-backup-{timestamp}`).
+> **Note:** On first `cpmm install` (or `npx claude-pro-minmax@latest install`), CPMM backs up your existing `~/.claude` to `~/.claude.pre-cpmm`. Re-running install via `cpmm install` updates CPMM-managed files in-place while preserving your settings (`language.md`, `settings.local.json`, `skills/learned/`, `plans/`, etc.). (`cpmm install` invokes `install.sh` internally.)
 
 ### 6. Project Initialization
-> **Tip:** Before running `claude`, initialize your project by referencing templates in this repository's `project-templates/` directory. (`install.sh` does not copy `project-templates` into `~/.claude`.)
+> **Tip:** Before running `claude`, initialize your project by referencing templates in this repository's `project-templates/` directory. (The installer does not copy `project-templates` into `~/.claude`.)
 
 ### 7. Verify Installation
 ```bash
-npx claude-pro-minmax@latest doctor
-# or (if installed globally)
+cpmm setup --check
 cpmm doctor
+# or (no global install)
+npx claude-pro-minmax@latest setup --check
+npx claude-pro-minmax@latest doctor
 ```
 
 ---
@@ -237,7 +250,7 @@ claude-pro-minmax
 ├── .claude.json                # Global MCP Settings (User Scope)
 ├── .claudeignore               # Files excluded from Claude's context
 ├── .gitignore                  # Git ignore rules
-├── install.sh                  # One-click installation script
+├── install.sh                  # Core installer (invoked by `cpmm install`)
 ├── LICENSE                     # MIT License
 ├── README.md                   # English Documentation
 ├── README.ko.md                # Korean Documentation
@@ -386,7 +399,7 @@ This configuration is specifically designed for the Pro Plan's 5-hour rolling re
 <details>
 <summary><strong>Q: Does it conflict with existing Claude Code settings?</strong></summary>
 
-A: It overwrites the `~/.claude/` directory, but `install.sh` automatically creates a backup as `~/.claude-backup-{timestamp}` before replacing it.
+A: On first `cpmm install` (or `npx claude-pro-minmax@latest install`), CPMM backs up your existing `~/.claude` to `~/.claude.pre-cpmm`. Subsequent installs update CPMM-managed files in-place — your language settings, local config, learned patterns, and session history are preserved. Perplexity API setup and language selection only run on fresh install.
 </details>
 
 <details>
