@@ -3,6 +3,7 @@
 <!-- Badges -->
 [![npm version](https://img.shields.io/npm/v/claude-pro-minmax.svg)](https://www.npmjs.com/package/claude-pro-minmax)
 [![npm downloads](https://img.shields.io/npm/dm/claude-pro-minmax.svg)](https://www.npmjs.com/package/claude-pro-minmax)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Claude Code](https://img.shields.io/badge/Claude_Code-Compatible-purple.svg)
 ![Pro Plan](https://img.shields.io/badge/Pro_Plan-Optimized-green.svg)
@@ -27,86 +28,93 @@ CPMM은 모델 라우팅, 출력 제어, 로컬 안전장치로 리셋 전까지
 
 ## 🛠 설치 (Installation)
 
-### 1. 빠른 설치 (권장)
+### 1. 설치 (권장)
 ```bash
-npm install -g claude-pro-minmax
-cpmm install
+npm install -g claude-pro-minmax@latest
+cpmm setup
+cpmm doctor
 ```
 
-대안 (전역 설치 없이 1회 실행):
+### 2. 업데이트
 ```bash
-npx claude-pro-minmax@latest install
+npm install -g claude-pro-minmax@latest
+cpmm setup
 ```
 
-### 2. 의존성 설정 (필수/선택)
+### 3. 트러블슈팅 (빠른 복구)
 ```bash
-cpmm setup --check
-# 누락된 의존성 자동 복구 (비대화형)
-cpmm setup --fix --yes
+# 누락된 의존성 재설치
+cpmm setup
+
+# 상태 확인만
+cpmm doctor
 ```
 
-- `required`: `claude`, `jq`
-- `optional`: `mgrep`, `tmux`
+의존성 정책:
+- `required`: `jq`, `mgrep`, `tmux`
+- `optional` (확인만): `claude` (사전 설치 가정)
+- 자동 설치 지원: `npm` (mgrep), `brew` (macOS), Linux 패키지 매니저 `apt-get`, `dnf`, `pacman`, `apk`
+- macOS에서 Homebrew가 없으면 설치 명령을 안내합니다
 
-### 3. 수동 의존성 설치 (고급)
+### 4. Perplexity/언어 설정 (선택)
+- 최초 인터랙티브 설치 시 `cpmm setup`이 출력 언어와 Perplexity API 키를 묻습니다.
+- 영어(기본): 파일이 필요 없습니다. `~/.claude/rules/language.md`가 있으면 삭제하세요.
+- 비영어: `~/.claude/rules/language.md`를 만들어 원하는 언어를 지정하세요.
+- Perplexity를 수동으로 설정하려면 `~/.claude.json`의 `mcpServers`에 아래를 추가하세요:
+
+```json
+"perplexity": {
+  "command": "npx",
+  "args": ["-y", "@perplexity-ai/mcp-server"],
+  "env": {
+    "PERPLEXITY_API_KEY": "YOUR_API_KEY_HERE"
+  }
+}
+```
+
+### 5. 고급 (선택)
+<details>
+<summary>수동 의존성 설치와 소스 설치 보기</summary>
+
+수동 의존성 설치:
 ```bash
-# 필수
-npm install -g @anthropic-ai/claude-code
+# jq
 brew install jq                 # macOS
-sudo apt-get install jq         # Linux
+sudo apt-get install -y jq      # Ubuntu/Debian
+sudo dnf install -y jq          # Fedora/RHEL
+sudo pacman -S --noconfirm jq   # Arch
+sudo apk add jq                 # Alpine
 
-# 선택
+# mgrep
 npm install -g @mixedbread/mgrep
 mgrep install-claude-code
+
+# tmux
 brew install tmux               # macOS
-sudo apt-get install tmux       # Linux
+sudo apt-get install -y tmux    # Ubuntu/Debian
+sudo dnf install -y tmux        # Fedora/RHEL
+sudo pacman -S --noconfirm tmux # Arch
+sudo apk add tmux               # Alpine
 ```
 
-### 4. 소스에서 수동 설치
+소스에서 수동 설치:
 ```bash
 git clone https://github.com/move-hoon/claude-pro-minmax.git
 cd claude-pro-minmax
-node bin/cpmm.js install
+node bin/cpmm.js setup
 # 고급/디버그 경로 (동일한 내부 설치기):
 # bash install.sh
 ```
 
-### 5. 설치 후 설정 (선택 사항)
-**Fresh Install을 인터랙티브로 실행할 때 `cpmm install`이 Perplexity API 키와 출력 언어를 묻습니다.**
-설치 시 언어를 건너뛰었다면 수동으로 설정할 수 있습니다:
-- **비영어:** `~/.claude/rules/language.md`를 생성하여 원하는 언어 지정
-- **영어 (기본값):** 파일 불필요. `~/.claude/rules/language.md`가 있으면 삭제
+설치 동작:
+- `cpmm setup`은 누락된 의존성을 설치한 뒤, CPMM 설정(설정 파일 복사, 언어 선택, Perplexity 설정)까지 진행합니다.
+- `cpmm doctor`는 수정 없이 의존성 상태만 확인합니다.
+- 재실행 시 CPMM 관리 파일만 갱신하고, `language.md`, `settings.local.json`, `skills/learned/`, `sessions/` 등 사용자 파일은 보존합니다.
 
-Perplexity를 설치 시 건너뛰었다면 나중에 수동으로 설정할 수 있습니다:
-1. `~/.claude.json` 파일을 엽니다.
-2. `mcpServers` 객체 안에 다음 내용을 추가하세요:
-   ```json
-   "perplexity": {
-     "command": "npx",
-     "args": ["-y", "@perplexity-ai/mcp-server"],
-     "env": {
-       "PERPLEXITY_API_KEY": "YOUR_API_KEY_HERE"
-     }
-   }
-   ```
+프로젝트 초기화 팁:
+- `claude` 실행 전에 `project-templates/`를 참고해 프로젝트를 초기화하세요. (설치기는 `project-templates`를 `~/.claude`로 복사하지 않습니다.)
 
-> **함께 포함된 MCP 서버 (기본 활성화):**
-> - **Sequential Thinking**: 복잡한 로직 처리를 위한 강력한 추론 도구
-> - **Context7**: 고급 문서 조회 및 컨텍스트 관리 도구
-
-> **Note:** 최초 `cpmm install`(또는 `npx claude-pro-minmax@latest install`) 시 기존 `~/.claude`를 `~/.claude.pre-cpmm`으로 백업합니다. 이후 `cpmm install` 재실행은 CPMM 관리 파일만 업데이트하며, 사용자 설정(`language.md`, `settings.local.json`, `skills/learned/`, `plans/` 등)은 보존됩니다. (`cpmm install`은 내부적으로 `install.sh`를 호출합니다.)
-
-### 6. 프로젝트 초기화
-> **Tip:** `claude` 실행 전, 이 저장소의 `project-templates/`를 참고해 프로젝트를 초기화하세요. (설치기는 `project-templates`를 `~/.claude`로 복사하지 않습니다.)
-
-### 7. 설치 확인
-```bash
-cpmm setup --check
-cpmm doctor
-# 또는 (전역 설치 없이 1회 실행)
-npx claude-pro-minmax@latest setup --check
-npx claude-pro-minmax@latest doctor
-```
+</details>
 
 ---
 
@@ -250,10 +258,16 @@ claude-pro-minmax
 ├── .claude.json                # 글로벌 MCP 설정 (User Scope)
 ├── .claudeignore               # Claude 컨텍스트 제외 규칙
 ├── .gitignore                  # Git ignore 규칙
-├── install.sh                  # 핵심 설치 스크립트 (`cpmm install`이 내부 호출)
+├── CONTRIBUTING.md             # 기여 가이드
+├── install.sh                  # 핵심 설치 스크립트 (`cpmm setup`이 내부 호출)
 ├── LICENSE                     # MIT 라이선스
 ├── README.md                   # 영문 문서
 ├── README.ko.md                # 국문 문서
+├── package.json                # npm 패키지 매니페스트
+├── bin/                        # CPMM CLI 엔트리포인트
+│   ├── cpmm.js                 # `cpmm` 실행 진입점
+├── lib/                        # CPMM CLI 코어 구현
+│   └── cli.js                  # setup/doctor 명령 로직
 ├── .claude/
 │   ├── CLAUDE.md               # 핵심 지침 (모든 세션에 로드됨)
 │   ├── settings.json           # 프로젝트 설정 (권한, 훅, 환경변수)
@@ -399,7 +413,7 @@ A: 네, 하지만 이러한 최적화가 필요하지 않을 수 있습니다. M
 <details>
 <summary><strong>Q: 기존 Claude Code 설정과 충돌하나요?</strong></summary>
 
-A: 최초 `cpmm install`(또는 `npx claude-pro-minmax@latest install`) 시 기존 `~/.claude`를 `~/.claude.pre-cpmm`으로 백업합니다. 이후 재설치는 CPMM 관리 파일만 덮어쓰고, 언어 설정·로컬 설정·학습된 패턴·세션 기록은 보존됩니다. Perplexity API 설정 및 언어 선택은 최초 설치 시에만 실행됩니다.
+A: 최초 `cpmm setup` 시 기존 `~/.claude`를 `~/.claude.pre-cpmm`으로 백업합니다. 재실행 시 CPMM 관리 파일만 갱신하고, 언어 설정·로컬 설정·학습된 패턴·세션 기록은 보존됩니다.
 </details>
 
 <details>
