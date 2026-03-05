@@ -1,6 +1,6 @@
 {
   "name": "claude-pro-minmax",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Quota-first routing and safety layer for Claude Code Pro workflows.",
   "author": "donghoon <move-hoon@users.noreply.github.com>",
   "license": "MIT",
@@ -9,20 +9,20 @@
     "cpmm": "bin/cpmm.js"
   },
   "files": [
-    "bin",
+    "bin/",
+    "lib/",
+    ".claude.json",
+    "install.sh",
     ".claude/CLAUDE.md",
     ".claude/settings.json",
     ".claude/settings.local.example.json",
-    ".claude/agents",
-    ".claude/commands",
-    ".claude/contexts",
-    ".claude/rules",
-    ".claude/sessions",
-    ".claude/skills",
-    ".claude.json",
+    ".claude/agents/",
+    ".claude/commands/",
+    ".claude/contexts/",
+    ".claude/rules/",
+    ".claude/skills/cli-wrappers/",
     ".claudeignore",
-    "install.sh",
-    "scripts",
+    "scripts/",
     "README.md",
     "README.ko.md",
     "LICENSE"
@@ -32,7 +32,7 @@
   },
   "scripts": {
     "help": "node bin/cpmm.js --help",
-    "setup": "node bin/cpmm.js setup --check",
+    "setup": "node bin/cpmm.js setup",
     "doctor": "node bin/cpmm.js doctor",
     "test": "node bin/cpmm.js --version && node bin/cpmm.js --help"
   },
