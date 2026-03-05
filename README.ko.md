@@ -56,7 +56,49 @@ cpmm doctor
 - 자동 설치 지원: `npm` (mgrep), `brew` (macOS), Linux 패키지 매니저 `apt-get`, `dnf`, `pacman`, `apk`
 - macOS에서 Homebrew가 없으면 설치 명령을 안내합니다
 
-### 4. Perplexity/언어 설정 (선택)
+### 4. 커스텀 & 업데이트 정책
+
+- `cpmm setup`은 누락된 의존성을 설치한 뒤, CPMM 설정(설정 파일 복사, 언어 선택, Perplexity 설정)까지 진행합니다.
+- `cpmm doctor`는 수정 없이 의존성 상태만 확인합니다.
+- 재실행 시 CPMM 관리 파일은 최신 버전으로 교체되고, 사용자 데이터는 보존됩니다.
+
+```text
+~/.claude/*            ← Global Baseline (CPMM 관리)
+  ├── agents/            🔄 업데이트 시 교체됨
+  ├── commands/          🔄 업데이트 시 교체됨
+  ├── contexts/          🔄 업데이트 시 교체됨
+  ├── scripts/           🔄 업데이트 시 교체됨
+  ├── skills/cli-wrappers/ 🔄 업데이트 시 교체됨
+  ├── rules/*.md         🔄 업데이트 시 교체됨
+  ├── settings.json      🔄 업데이트 시 교체됨
+  ├── settings.local.json  ✋ 사용자 소유 — 보존됨
+  ├── skills/learned/      ✋ 사용자 소유 — 보존됨
+  ├── sessions/            ✋ 사용자 소유 — 보존됨
+  ├── plans/               ✋ 사용자 소유 — 보존됨
+  ├── projects/            ✋ 사용자 소유 — 보존됨
+  └── rules/language.md    ✋ 사용자 소유 — 보존됨
+
+<project>/.claude/*    ← Project-Specific (사용자/팀 커스텀)
+  ├── CLAUDE.md          프로젝트별 지침
+  ├── commands/          프로젝트 전용 슬래시 명령어
+  ├── skills/            프로젝트 전용 스킬
+  ├── rules/             프로젝트 전용 규칙
+  └── settings.json      프로젝트 전용 권한/훅/MCP 비활성화
+```
+
+> **핵심 규칙 2가지:**
+> 1. 글로벌 커스텀은 `settings.local.json`에만 — `settings.json`은 업데이트 시 덮어쓰기됩니다.
+> 2. 커스텀 명령어/규칙은 프로젝트 `.claude/`에 — 글로벌 `commands/`는 CPMM이 관리합니다.
+
+프로젝트 초기화 팁:
+- `claude` 실행 전에 `project-templates/`를 참고해 프로젝트를 초기화하세요. (설치기는 `project-templates`를 `~/.claude`로 복사하지 않습니다.)
+
+### 5. 고급 (선택)
+<details>
+<summary>Perplexity, 언어, 수동 설치 보기</summary>
+
+**Perplexity/언어 설정 (필수 아님):**
+- Perplexity는 `/dplan`의 웹 리서치에 사용됩니다. 설정하지 않아도 `/dplan`은 Sequential Thinking + Context7으로 동작하며, 나머지 모든 기능은 Perplexity와 무관합니다.
 - 최초 인터랙티브 설치 시 `cpmm setup`이 출력 언어와 Perplexity API 키를 묻습니다.
 - 영어(기본): 파일이 필요 없습니다. `~/.claude/rules/language.md`가 있으면 삭제하세요.
 - 비영어: `~/.claude/rules/language.md`를 만들어 원하는 언어를 지정하세요.
@@ -72,11 +114,7 @@ cpmm doctor
 }
 ```
 
-### 5. 고급 (선택)
-<details>
-<summary>수동 의존성 설치와 소스 설치 보기</summary>
-
-수동 의존성 설치:
+**수동 의존성 설치:**
 ```bash
 # jq
 brew install jq                 # macOS
@@ -97,7 +135,7 @@ sudo pacman -S --noconfirm tmux # Arch
 sudo apk add tmux               # Alpine
 ```
 
-소스에서 수동 설치:
+**소스에서 수동 설치:**
 ```bash
 git clone https://github.com/move-hoon/claude-pro-minmax.git
 cd claude-pro-minmax
@@ -106,19 +144,21 @@ node bin/cpmm.js setup
 # bash install.sh
 ```
 
-설치 동작:
-- `cpmm setup`은 누락된 의존성을 설치한 뒤, CPMM 설정(설정 파일 복사, 언어 선택, Perplexity 설정)까지 진행합니다.
-- `cpmm doctor`는 수정 없이 의존성 상태만 확인합니다.
-- 재실행 시 CPMM 관리 파일만 갱신하고, `language.md`, `settings.local.json`, `skills/learned/`, `sessions/` 등 사용자 파일은 보존합니다.
-
-프로젝트 초기화 팁:
-- `claude` 실행 전에 `project-templates/`를 참고해 프로젝트를 초기화하세요. (설치기는 `project-templates`를 `~/.claude`로 복사하지 않습니다.)
-
 </details>
 
 ---
 
 ## 🚀 빠른 시작 (Quick Start)
+
+### ⚡ 첫 60초 (FTUE)
+
+```bash
+claude
+> /plan 이 저장소를 분석하고 작은 개선 1개에 대한 3단계 실행 계획을 제안해줘.
+> /do 1단계만 최소 변경으로 안전하게 구현해줘.
+> /review .
+> /session-save ftue-first-pass
+```
 
 ### 🤖 에이전트 워크플로우
 
@@ -413,7 +453,7 @@ A: 네, 하지만 이러한 최적화가 필요하지 않을 수 있습니다. M
 <details>
 <summary><strong>Q: 기존 Claude Code 설정과 충돌하나요?</strong></summary>
 
-A: 최초 `cpmm setup` 시 기존 `~/.claude`를 `~/.claude.pre-cpmm`으로 백업합니다. 재실행 시 CPMM 관리 파일만 갱신하고, 언어 설정·로컬 설정·학습된 패턴·세션 기록은 보존됩니다.
+A: 최초 `cpmm setup` 시 기존 `~/.claude`를 `~/.claude.pre-cpmm`으로 백업합니다. 재실행 시 CPMM 관리 경로는 재생성되고, 사용자 소유 경로(언어 설정, 로컬 설정, 학습 패턴, 세션)는 보존됩니다. 정확한 경계는 설치 섹션의 2-Layer 구조를 참고하세요.
 </details>
 
 <details>
@@ -431,7 +471,22 @@ A: API 가격(컴퓨팅 비용 반영)을 보면 Opus 4.6 ($5/MTok input)은 Son
 <details>
 <summary><strong>Q: /do 실행 중 실패하면 어떻게 되나요?</strong></summary>
 
-A: CPMM은 **원자적 롤백**을 사용합니다. `/do` 실행 전 `git stash push`로 스냅샷을 저장합니다. 2회 재시도 후 실패하면 `git stash pop`이 작업 트리를 실행 전 상태로 복원합니다. dirty state를 방지하고 수동 정리에 소비될 2-4 메시지를 절약합니다.
+A: CPMM은 `scripts/snapshot.sh`를 통한 **best-effort 원자적 롤백**을 사용합니다.
+
+- `/do` 실행 전 `snapshot.sh push`로 라벨된 stash 스냅샷을 시도합니다.
+- 실패 시 `snapshot.sh pop`이 복구를 시도하며, 아래 상태 중 하나를 반환합니다:
+
+| 상태 | 의미 |
+| --- | --- |
+| `RESTORED` | CPMM 라벨 stash를 정상 pop하여 복구 완료 |
+| `RESTORE_FAILED` | `git stash pop` 실패 (예: 충돌) |
+| `CHECKOUT_CLEAN` | CPMM stash가 없어 fallback `git checkout .` 성공 |
+| `CLEAN_FAILED` | fallback 정리도 실패 |
+
+롤백 후에도 완전히 깨끗하지 않다면:
+1. `git status` 확인
+2. `git stash list` 확인
+3. 충돌 해결/새 untracked 파일 수동 정리 후 재시도
 
 - 비용: 0 (git stash는 로컬 작업)
 - 제한: 기존(tracked) 파일만 추적. 새로 생성된 파일은 수동 제거 필요.

@@ -56,7 +56,49 @@ Dependency policy:
 - auto-install supports `npm` (mgrep), `brew` (macOS), and Linux package managers `apt-get`, `dnf`, `pacman`, `apk`
 - on macOS without Homebrew, setup prints the Homebrew install command
 
-### 4. Perplexity and Language (Optional)
+### 4. Customization & Update Policy
+
+- `cpmm setup` installs missing dependencies, then configures CPMM (copies config files, language selection, Perplexity setup).
+- `cpmm doctor` checks dependency status without modifying anything.
+- Re-running `cpmm setup` replaces CPMM-managed files with the latest version while preserving user data.
+
+```text
+~/.claude/*            ← Global Baseline (CPMM-managed)
+  ├── agents/            🔄 Replaced on update
+  ├── commands/          🔄 Replaced on update
+  ├── contexts/          🔄 Replaced on update
+  ├── scripts/           🔄 Replaced on update
+  ├── skills/cli-wrappers/ 🔄 Replaced on update
+  ├── rules/*.md         🔄 Replaced on update
+  ├── settings.json      🔄 Replaced on update
+  ├── settings.local.json  ✋ User-owned — preserved
+  ├── skills/learned/      ✋ User-owned — preserved
+  ├── sessions/            ✋ User-owned — preserved
+  ├── plans/               ✋ User-owned — preserved
+  ├── projects/            ✋ User-owned — preserved
+  └── rules/language.md    ✋ User-owned — preserved
+
+<project>/.claude/*    ← Project-Specific (user/team customization)
+  ├── CLAUDE.md          Project-specific instructions
+  ├── commands/          Project-specific slash commands
+  ├── skills/            Project-specific skills
+  ├── rules/             Project-specific rules
+  └── settings.json      Project-specific permissions/hooks/MCP disable
+```
+
+> **Two key rules:**
+> 1. Global customization goes in `settings.local.json` only — `settings.json` is overwritten on update.
+> 2. Custom commands/rules go in project `.claude/` — global `commands/` is managed by CPMM.
+
+Project initialization tip:
+- Before running `claude`, initialize your project with templates in `project-templates/` (not copied into `~/.claude`).
+
+### 5. Advanced (Optional)
+<details>
+<summary>Perplexity, language, manual install</summary>
+
+**Perplexity/Language setup (not required):**
+- Perplexity is used for web research in `/dplan`. Without it, `/dplan` still works via Sequential Thinking + Context7. All other features are unrelated to Perplexity.
 - On fresh interactive installs, `cpmm setup` asks for output language and Perplexity API key.
 - English (default): no file needed; remove `~/.claude/rules/language.md` if it exists.
 - Non-English: create `~/.claude/rules/language.md` with your preferred language.
@@ -72,11 +114,7 @@ Dependency policy:
 }
 ```
 
-### 5. Advanced (Optional)
-<details>
-<summary>Show manual dependency setup and source install</summary>
-
-Manual dependency setup:
+**Manual dependency setup:**
 ```bash
 # jq
 brew install jq                 # macOS
@@ -97,7 +135,7 @@ sudo pacman -S --noconfirm tmux # Arch
 sudo apk add tmux               # Alpine
 ```
 
-Manual install from source:
+**Manual install from source:**
 ```bash
 git clone https://github.com/move-hoon/claude-pro-minmax.git
 cd claude-pro-minmax
@@ -106,19 +144,21 @@ node bin/cpmm.js setup
 # bash install.sh
 ```
 
-Install behavior:
-- `cpmm setup` installs missing dependencies, then configures CPMM (copies config files, language selection, Perplexity setup).
-- `cpmm doctor` checks dependency status without modifying anything.
-- Re-running `cpmm setup` updates CPMM-managed files in place and preserves user-owned files like `language.md`, `settings.local.json`, `skills/learned/`, and `sessions/`.
-
-Project initialization tip:
-- Before running `claude`, initialize your project with templates in `project-templates/` (not copied into `~/.claude`).
-
 </details>
 
 ---
 
 ## 🚀 Quick Start
+
+### ⚡ First 60 Seconds (FTUE)
+
+```bash
+claude
+> /plan Analyze this repository and propose a 3-step implementation plan for one small improvement.
+> /do Implement step 1 only, with minimal and safe changes.
+> /review .
+> /session-save ftue-first-pass
+```
 
 ### 🤖 Agent Workflow
 
@@ -413,7 +453,7 @@ This configuration is specifically designed for the Pro Plan's 5-hour rolling re
 <details>
 <summary><strong>Q: Does it conflict with existing Claude Code settings?</strong></summary>
 
-A: On first `cpmm setup`, CPMM backs up your existing `~/.claude` to `~/.claude.pre-cpmm`. Re-running `cpmm setup` updates CPMM-managed files in place — your language settings, local config, learned patterns, and session history are preserved.
+A: On first `cpmm setup`, CPMM backs up your existing `~/.claude` to `~/.claude.pre-cpmm`. Re-running `cpmm setup` recreates CPMM-managed paths and preserves user-owned paths (language settings, local config, learned patterns, sessions). See the 2-Layer structure in the install section for exact boundaries.
 </details>
 
 <details>
@@ -431,7 +471,22 @@ A: API pricing (reflecting compute cost), Opus 4.6 ($5/MTok input) is much more 
 <details>
 <summary><strong>Q: What happens when /do fails mid-execution?</strong></summary>
 
-A: CPMM uses **Atomic Rollback**. Before `/do` executes, `git stash push` saves a snapshot. If execution fails after 2 retries, `git stash pop` restores the working tree to its pre-execution state. This prevents dirty state and saves 2-4 messages that would otherwise be spent on manual cleanup.
+A: CPMM uses **best-effort atomic rollback** via `scripts/snapshot.sh`.
+
+- Before `/do`, `snapshot.sh push` attempts a labeled stash snapshot.
+- On failure, `snapshot.sh pop` attempts restore and returns one of these statuses:
+
+| Status | Meaning |
+| --- | --- |
+| `RESTORED` | Labeled CPMM stash was popped successfully. |
+| `RESTORE_FAILED` | `git stash pop` failed (for example: conflicts). |
+| `CHECKOUT_CLEAN` | No CPMM stash found; fallback `git checkout .` succeeded. |
+| `CLEAN_FAILED` | Fallback cleanup also failed. |
+
+If rollback did not fully restore clean state:
+1. Run `git status`.
+2. Run `git stash list`.
+3. Resolve conflicts / remove new untracked files manually, then retry.
 
 - Cost: Zero (git stash is a local operation)
 - Limitation: Only tracks existing (tracked) files. Newly created files require manual removal.
