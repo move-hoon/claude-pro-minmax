@@ -6,6 +6,7 @@
 - `ccusage session`: `Input`, `Output`, `Cache Create (cache output)`, `Cache Read`, `Total Tokens`, `Cost`
 - `ccusage` values: session report values at each measurement point (conversation-session grouped)
 - Opus runtime setting: all Opus 4.6 runs in this archive were executed with effort mode set to `medium`.
+- Interpretation note: `/usage` is a coarse percentage indicator. This archive is intended to validate workload-level directional behavior rather than prove an exact internal credits formula.
 
 ## 2) Measured File Sizes (`wc -l -w -c`, executed files)
 
@@ -81,3 +82,42 @@ Token/cost columns are session report values at each run point
 - In the 3-turn tool-mediated workload, model spread is large: Haiku `+1%`, Sonnet `+3%`, Opus `+18%`.
 - In full-file output workloads, larger payload is accompanied by higher `Δusage` and higher `Total Tokens` (most clearly in Opus).
 - In Opus no-tool + `/reset`, short-window behavior is non-linear: `+1%, +1%, +0%`.
+
+## 8) External Reverse-Engineering Case: `claude-limits`
+
+Reference: [claude-limits](https://she-llac.com/claude-limits) (checked on 2026-03-11)
+
+- Analysis type: unofficial reverse engineering
+- Input data: unrounded usage-float samples from generation endpoint SSE responses
+- Proposed model:
+  - plan usage is modeled as used credits / plan credits
+  - one call is modeled as `ceil(input_tokens × input_rate + output_tokens × output_rate)`
+  - output rate is 5x input rate
+  - `claude-limits` models subscription-plan cache reads as 0 credits
+
+| Model | Input credits/token | Output credits/token |
+| --- | ---: | ---: |
+| Haiku | 2/15 | 10/15 |
+| Sonnet | 6/15 | 30/15 |
+| Opus | 10/15 | 50/15 |
+
+- Reported Pro-plan estimates:
+  - `550,000 credits / 5h`
+  - `5,000,000 credits / week`
+
+## 9) External Model vs Local Measurements
+
+| Comparison Point | `claude-limits` | Local Observation | Summary |
+| --- | --- | --- | --- |
+| Heavier models cost more usage | Opus > Sonnet > Haiku credits burden | A, B | Same direction |
+| Repeated identical work widens cumulative gaps | cumulative difference expands across repeated calls | B | Same direction |
+| Larger payload increases usage | more input/output increases credits | D | Same direction |
+| Repeated runs may be non-linear | ceil, cache state, and windowing can make behavior non-linear | B, C | Partial match |
+| Cache read is favorable | subscription-plan cache read = 0 credits | `Cache Read` rises in B, C, D | Not directly measured |
+| Exact coefficients and plan ceilings | coefficient table and plan ceilings are proposed | no local reproduction dataset | Not directly measured |
+
+## 10) Overall Comparison
+
+- Local measurements show the same operational direction: heavier models, repeated identical work, and larger input/output are associated with higher `Δusage`.
+- `claude-limits` explains that pattern using model-specific coefficients, input/output weighting, and cache-read handling.
+- CPMM's core strategy, starting with lighter models and minimizing unnecessary output and repeated reads, aligns with both the local measurements and the external reverse-engineering model.
