@@ -47,6 +47,11 @@ else
 fi
 
 # Backup existing ~/.claude (Fresh Install Only)
+HAS_EXISTING_RTK_HOOK=false
+if [ -f "$HOME/.claude/settings.json" ] && grep -q "rtk-rewrite.sh" "$HOME/.claude/settings.json" 2>/dev/null; then
+  HAS_EXISTING_RTK_HOOK=true
+fi
+
 if [ "$IS_UPDATE" = false ] && [ -d "$HOME/.claude" ]; then
   if [ -d "$HOME/.claude.pre-cpmm" ]; then
     echo "⚠️  ~/.claude.pre-cpmm already exists, skipping backup."
@@ -283,9 +288,26 @@ echo "  > /dplan Analyze complex architecture"
 echo "  > /do Implement the login page"
 echo ""
 echo "Dependency Check:"
-echo "  cpmm setup       # install missing deps (jq, mgrep, tmux)"
+echo "  cpmm setup       # install missing deps (jq, mgrep, tmux) + attempt optional RTK install"
 echo "  cpmm doctor      # check status only"
 echo ""
+if command -v rtk >/dev/null 2>&1; then
+  echo "RTK (Optional Integration):"
+  echo "  Installed: rtk"
+  echo "  Enable hook: rtk init -g --hook-only"
+  echo "  Recommended Bash hook order in ~/.claude/settings.json:"
+  echo "    1) ~/.claude/scripts/hooks/critical-action-check.sh  (timeout: 5)"
+  echo "    2) ~/.claude/hooks/rtk-rewrite.sh                    (timeout: 10)"
+  echo "  Rollback: rtk init -g --uninstall"
+  echo ""
+fi
+if [ "$HAS_EXISTING_RTK_HOOK" = true ]; then
+  echo "RTK Update Note:"
+  echo "  An RTK hook was detected before this CPMM update."
+  echo "  Because CPMM reinstalled ~/.claude/settings.json, re-check RTK hook order and timeout."
+  echo "  Run: cpmm doctor"
+  echo ""
+fi
 echo "Language:"
 echo "  To change language: edit ~/.claude/rules/language.md"
 echo "  To use English: rm ~/.claude/rules/language.md"
