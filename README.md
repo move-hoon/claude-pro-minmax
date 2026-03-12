@@ -15,13 +15,15 @@
 CPMM helps Pro users complete more verified tasks before reset through model routing, output control, and local safety rails.
 
 > **Already installed? Start here: [User Guide](docs/USER-MANUAL.md)**
+>
+> **New in v1.3.0:** Optional RTK integration for Bash-heavy output reduction.
 
 ---
 
 > [!TIP]
 > **🚀 3-Second Summary: Why use this?**
 > 1.  **Batch Execution:** Use `/do` to keep implementation and verification in one flow, and escalate to `/do-sonnet`/`/do-opus` only when needed.
-> 2.  **Output Cost Control:** Use response budgets and CLI filtering to reduce unnecessary output tokens.
+> 2.  **Output Cost Control:** Use response budgets, CLI filtering, and optional RTK for Bash-heavy output reduction.
 > 3.  **Local Safety Rails:** Local hooks and atomic rollback help you recover quickly on failure.
 
 ---
@@ -50,16 +52,22 @@ cpmm setup
 cpmm doctor
 ```
 
+> **v1.3.0 note:** `cpmm setup` now attempts RTK installation when supported. RTK activation remains opt-in.
+
 Dependency policy:
 - `required`: `jq`, `mgrep`, `tmux`
+- `optional` (auto-install attempt): `rtk`
 - `optional` (check only): `claude` (assumed pre-installed)
-- auto-install supports `npm` (mgrep), `brew` (macOS), and Linux package managers `apt-get`, `dnf`, `pacman`, `apk`
+- auto-install paths by tool:
+  - `mgrep`: `npm`
+  - `rtk`: `brew` or upstream `curl` installer
+  - `jq`, `tmux`: `brew` (macOS) or Linux package managers `apt-get`, `dnf`, `pacman`, `apk`
 - on macOS without Homebrew, setup prints the Homebrew install command
 
 ### 4. Customization & Update Policy
 
 - `cpmm setup` installs missing dependencies, then configures CPMM (copies config files, language selection, Perplexity setup).
-- `cpmm doctor` checks dependency status without modifying anything.
+- `cpmm doctor` checks dependency status and RTK hook health without modifying anything.
 - Re-running `cpmm setup` replaces CPMM-managed files with the latest version while preserving user data.
 
 ```text
@@ -87,7 +95,7 @@ Dependency policy:
 ```
 
 > **Two key rules:**
-> 1. Global customization goes in `settings.local.json` only — `settings.json` is overwritten on update.
+> 1. Global customization generally goes in `settings.local.json`. `settings.json` is CPMM-managed and overwritten on update; if you opt into RTK or other third-party hooks there, re-check them after updates.
 > 2. Custom commands/rules go in project `.claude/` — global `commands/` is managed by CPMM.
 
 Project initialization tip:
@@ -145,6 +153,37 @@ node bin/cpmm.js setup
 ```
 
 </details>
+
+### 6. Bash Output Optimization (RTK)
+
+CPMM supports RTK as an **optional output-optimization layer** for Bash-heavy workflows. `cpmm setup` attempts to install the RTK binary, but CPMM does **not** enable the RTK hook by default.
+
+Recommended opt-in flow:
+
+```bash
+rtk init -g --hook-only
+cpmm doctor
+```
+
+Recommended `PreToolUse` order in `~/.claude/settings.json`:
+- CPMM safety hook first: `~/.claude/scripts/hooks/critical-action-check.sh` with `timeout: 5`
+- RTK rewrite hook second: `~/.claude/hooks/rtk-rewrite.sh` with `timeout: 10`
+
+Update note:
+- `cpmm setup` rewrites `~/.claude/settings.json` on update.
+- If you opt into RTK, re-check hook order and timeout after each CPMM update, then run `cpmm doctor`.
+
+Recommended verification:
+- Run `/hooks` and confirm both CPMM and RTK hooks are loaded
+- Confirm dangerous commands are still blocked by CPMM
+- Run `cpmm doctor`
+- After real Bash-heavy sessions, inspect `rtk gain --quota --tier pro`
+
+Rollback:
+
+```bash
+rtk init -g --uninstall
+```
 
 ---
 
@@ -497,6 +536,7 @@ If rollback did not fully restore clean state:
 ## References
 
 - Archived experiment evidence for core strategy: [Core Strategy Experiment Archive](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md)
+- Independent reverse-engineering case study for direction-checking: [claude-limits](https://she-llac.com/claude-limits) (unofficial analysis of Claude plan usage/credits behavior)
 - Official pricing and usage docs:
   - [Anthropic Pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
   - [Usage Limit Best Practices](https://support.claude.com/en/articles/9797557-usage-limit-best-practices)

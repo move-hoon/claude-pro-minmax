@@ -77,6 +77,16 @@ flowchart TB
 
 **비용 설명:** 모든 Hook은 머신에서 로컬로 실행되어 API 호출이 없습니다. Hook이 Claude에게 메시지를 표시할 때만(예: 명령 차단, 컴팩션 제안) 해당 메시지가 입력 토큰을 소비하며, 이러한 메시지는 의도적으로 간결합니다.
 
+## RTK 순서
+
+RTK를 opt-in으로 사용할 때는 CPMM의 Bash safety hook를 먼저 두고, RTK rewrite hook를 그 뒤에 둡니다.
+
+권장 순서 (`~/.claude/settings.json`):
+- `~/.claude/scripts/hooks/critical-action-check.sh` with `timeout: 5`
+- `~/.claude/hooks/rtk-rewrite.sh` with `timeout: 10`
+
+이 순서를 유지해야 CPMM의 위험 명령 차단이 RTK rewrite보다 먼저 실행됩니다.
+
 ## 종료 코드
 
 | 코드 | 동작 |

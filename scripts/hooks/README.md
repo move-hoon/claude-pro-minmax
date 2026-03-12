@@ -77,6 +77,16 @@ flowchart TB
 
 **Cost Explanation:** All hooks run locally on your machine without API calls. Only when a hook displays a message to Claude (e.g., blocking a command, suggesting compaction) does that message consume input tokens—and these messages are intentionally brief.
 
+## RTK Ordering
+
+If you opt into RTK, keep CPMM's Bash safety hook first and RTK's rewrite hook second.
+
+Recommended order in `~/.claude/settings.json`:
+- `~/.claude/scripts/hooks/critical-action-check.sh` with `timeout: 5`
+- `~/.claude/hooks/rtk-rewrite.sh` with `timeout: 10`
+
+This preserves CPMM's critical-action block before RTK rewrites the Bash command.
+
 ## Exit Codes
 
 | Code | Behavior |
@@ -115,4 +125,3 @@ Output to **stderr** is shown to Claude when blocking (exit 2). Note: stdout JSO
 2. Make executable: `chmod +x script.sh`
 3. Add to `settings.json` or agent frontmatter
 4. Test with various inputs
-

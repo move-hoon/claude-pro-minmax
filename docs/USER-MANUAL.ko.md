@@ -77,6 +77,34 @@
 | 이전 상태 확인 후 재개 | `/session-load --list` | 대상 세션 식별 완료 | `/session-load [name]` |
 | 비대해진 컨텍스트 정리 | `/compact-phase` | 단계 기준 정리 완료 | 현재 워크플로우 계속 |
 
+## 2.2 RTK 선택 통합
+
+적용: `git`, 테스트 러너, 빌드처럼 Bash 비중이 높은 워크플로우에서 RTK의 출력 축약 효과를 쓰고 싶을 때.
+
+활성화:
+```bash
+rtk init -g --hook-only
+cpmm doctor
+```
+
+권장 검증:
+1. `/hooks`에서 CPMM hook과 RTK hook이 모두 보이는지 확인
+2. 위험 명령이 여전히 CPMM에서 먼저 차단되는지 확인
+3. `cpmm doctor`로 hook 순서 / timeout 안내 확인
+4. 실제 세션 후 아래 명령으로 효과 확인
+   ```bash
+   rtk gain --quota --tier pro
+   ```
+
+권장 글로벌 hook 순서 (`~/.claude/settings.json`):
+- `~/.claude/scripts/hooks/critical-action-check.sh` (`timeout: 5`)
+- `~/.claude/hooks/rtk-rewrite.sh` (`timeout: 10`)
+
+롤백:
+```bash
+rtk init -g --uninstall
+```
+
 ## 3. 시나리오별 실행 런북
 
 ### 시나리오 1: 빠른 버그 수정

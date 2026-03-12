@@ -77,6 +77,34 @@ Result interpretation:
 | Resume unknown previous state | `/session-load --list` | Target session identified | `/session-load [name]` |
 | Reduce noisy context | `/compact-phase` | Context pruned by phase | Continue current workflow |
 
+## 2.2 RTK Optional Integration
+
+Use when: your workflow is Bash-heavy (`git`, test runners, builds) and you want RTK's filtered command output.
+
+Enable:
+```bash
+rtk init -g --hook-only
+cpmm doctor
+```
+
+Recommended verification:
+1. Run `/hooks` and confirm both CPMM and RTK hooks are visible.
+2. Confirm a dangerous command is still blocked by CPMM first.
+3. Run `cpmm doctor` and check hook order / timeout guidance.
+4. After real sessions, inspect:
+   ```bash
+   rtk gain --quota --tier pro
+   ```
+
+Recommended global hook order in `~/.claude/settings.json`:
+- `~/.claude/scripts/hooks/critical-action-check.sh` (`timeout: 5`)
+- `~/.claude/hooks/rtk-rewrite.sh` (`timeout: 10`)
+
+Rollback:
+```bash
+rtk init -g --uninstall
+```
+
 ## 3. Scenario Runbooks
 
 ### Scenario 1: Quick Bug Fix
