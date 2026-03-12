@@ -101,7 +101,40 @@ cpmm doctor
 프로젝트 초기화 팁:
 - `claude` 실행 전에 `project-templates/`를 참고해 프로젝트를 초기화하세요. (설치기는 `project-templates`를 `~/.claude`로 복사하지 않습니다.)
 
-### 5. 고급 (선택)
+### 5. Bash 출력 최적화 (RTK)
+
+RTK는 CPMM이 지원하는 **선택적 출력 최적화 계층**입니다. `cpmm setup`은 RTK 바이너리 설치를 시도하지만, RTK hook은 기본 활성화하지 않습니다.
+
+RTK를 이번 릴리스에 선택 통합으로 넣은 이유는 CPMM의 출력 제어 방향과 잘 맞고, CPMM safety hook 우선 순서를 유지하면서도 Bash-heavy 워크플로우에서 이미 유의미한 실사용 절감 신호가 확인됐기 때문입니다. 다만 hook 동작을 예측 가능하고 디버깅 가능하게 유지하기 위해 default-on이 아니라 opt-in으로 제공합니다.
+
+권장 opt-in 절차:
+
+```bash
+rtk init -g --hook-only
+cpmm doctor
+```
+
+권장 `PreToolUse` 순서 (`~/.claude/settings.json`):
+- 먼저 CPMM safety hook: `~/.claude/scripts/hooks/critical-action-check.sh` with `timeout: 5`
+- 그 다음 RTK rewrite hook: `~/.claude/hooks/rtk-rewrite.sh` with `timeout: 10`
+
+업데이트 참고:
+- `cpmm setup`은 업데이트 시 `~/.claude/settings.json`을 다시 씁니다.
+- RTK를 opt-in으로 사용 중이면 CPMM 업데이트 후 hook 순서와 timeout을 다시 확인하고, `cpmm doctor`를 다시 실행하세요.
+
+권장 검증:
+- `/hooks`에서 CPMM hook과 RTK hook이 모두 로드되는지 확인
+- 위험 명령이 여전히 CPMM에서 먼저 차단되는지 확인
+- `cpmm doctor` 실행
+- 실제 Bash-heavy 세션 후 `rtk gain --quota --tier pro` 확인
+
+롤백:
+
+```bash
+rtk init -g --uninstall
+```
+
+### 6. 고급 (선택)
 <details>
 <summary>Perplexity, 언어, 수동 설치 보기</summary>
 
@@ -153,37 +186,6 @@ node bin/cpmm.js setup
 ```
 
 </details>
-
-### 6. Bash 출력 최적화 (RTK)
-
-RTK는 CPMM이 지원하는 **선택적 출력 최적화 계층**입니다. `cpmm setup`은 RTK 바이너리 설치를 시도하지만, RTK hook은 기본 활성화하지 않습니다.
-
-권장 opt-in 절차:
-
-```bash
-rtk init -g --hook-only
-cpmm doctor
-```
-
-권장 `PreToolUse` 순서 (`~/.claude/settings.json`):
-- 먼저 CPMM safety hook: `~/.claude/scripts/hooks/critical-action-check.sh` with `timeout: 5`
-- 그 다음 RTK rewrite hook: `~/.claude/hooks/rtk-rewrite.sh` with `timeout: 10`
-
-업데이트 참고:
-- `cpmm setup`은 업데이트 시 `~/.claude/settings.json`을 다시 씁니다.
-- RTK를 opt-in으로 사용 중이면 CPMM 업데이트 후 hook 순서와 timeout을 다시 확인하고, `cpmm doctor`를 다시 실행하세요.
-
-권장 검증:
-- `/hooks`에서 CPMM hook과 RTK hook이 모두 로드되는지 확인
-- 위험 명령이 여전히 CPMM에서 먼저 차단되는지 확인
-- `cpmm doctor` 실행
-- 실제 Bash-heavy 세션 후 `rtk gain --quota --tier pro` 확인
-
-롤백:
-
-```bash
-rtk init -g --uninstall
-```
 
 ---
 

@@ -101,7 +101,40 @@ Dependency policy:
 Project initialization tip:
 - Before running `claude`, initialize your project with templates in `project-templates/` (not copied into `~/.claude`).
 
-### 5. Advanced (Optional)
+### 5. Bash Output Optimization (RTK)
+
+CPMM supports RTK as an **optional output-optimization layer** for Bash-heavy workflows. `cpmm setup` attempts to install the RTK binary, but CPMM does **not** enable the RTK hook by default.
+
+We’re shipping RTK as an official optional integration because it fits CPMM’s output-control direction, preserves CPMM-first safety hook ordering, and has already shown meaningful real-world savings in Bash-heavy workflows. CPMM still keeps it opt-in so hook behavior stays predictable and easier to debug.
+
+Recommended opt-in flow:
+
+```bash
+rtk init -g --hook-only
+cpmm doctor
+```
+
+Recommended `PreToolUse` order in `~/.claude/settings.json`:
+- CPMM safety hook first: `~/.claude/scripts/hooks/critical-action-check.sh` with `timeout: 5`
+- RTK rewrite hook second: `~/.claude/hooks/rtk-rewrite.sh` with `timeout: 10`
+
+Update note:
+- `cpmm setup` rewrites `~/.claude/settings.json` on update.
+- If you opt into RTK, re-check hook order and timeout after each CPMM update, then run `cpmm doctor`.
+
+Recommended verification:
+- Run `/hooks` and confirm both CPMM and RTK hooks are loaded
+- Confirm dangerous commands are still blocked by CPMM
+- Run `cpmm doctor`
+- After real Bash-heavy sessions, inspect `rtk gain --quota --tier pro`
+
+Rollback:
+
+```bash
+rtk init -g --uninstall
+```
+
+### 6. Advanced (Optional)
 <details>
 <summary>Perplexity, language, manual install</summary>
 
@@ -153,37 +186,6 @@ node bin/cpmm.js setup
 ```
 
 </details>
-
-### 6. Bash Output Optimization (RTK)
-
-CPMM supports RTK as an **optional output-optimization layer** for Bash-heavy workflows. `cpmm setup` attempts to install the RTK binary, but CPMM does **not** enable the RTK hook by default.
-
-Recommended opt-in flow:
-
-```bash
-rtk init -g --hook-only
-cpmm doctor
-```
-
-Recommended `PreToolUse` order in `~/.claude/settings.json`:
-- CPMM safety hook first: `~/.claude/scripts/hooks/critical-action-check.sh` with `timeout: 5`
-- RTK rewrite hook second: `~/.claude/hooks/rtk-rewrite.sh` with `timeout: 10`
-
-Update note:
-- `cpmm setup` rewrites `~/.claude/settings.json` on update.
-- If you opt into RTK, re-check hook order and timeout after each CPMM update, then run `cpmm doctor`.
-
-Recommended verification:
-- Run `/hooks` and confirm both CPMM and RTK hooks are loaded
-- Confirm dangerous commands are still blocked by CPMM
-- Run `cpmm doctor`
-- After real Bash-heavy sessions, inspect `rtk gain --quota --tier pro`
-
-Rollback:
-
-```bash
-rtk init -g --uninstall
-```
 
 ---
 
