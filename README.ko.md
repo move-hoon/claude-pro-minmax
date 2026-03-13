@@ -128,6 +128,8 @@ cpmm doctor
 - `cpmm doctor` 실행
 - 실제 Bash-heavy 세션 후 `rtk gain --quota --tier pro` 확인
 
+공개된 [RTK 통합 사용자 사례](https://github.com/move-hoon/claude-pro-minmax/issues/3)에서는 `rtk gain --quota --tier pro` 기준으로 Bash-heavy 워크플로우에서 `1,664`개 명령 동안 `8.5M` 토큰 절감(`49.4%`)이 보고되었습니다. 절감률은 작업 부하와 세션 형태에 따라 달라질 수 있습니다.
+
 롤백:
 
 ```bash

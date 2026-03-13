@@ -128,6 +128,8 @@ Recommended verification:
 - Run `cpmm doctor`
 - After real Bash-heavy sessions, inspect `rtk gain --quota --tier pro`
 
+Public example: in a [community RTK integration report](https://github.com/move-hoon/claude-pro-minmax/issues/3), `rtk gain --quota --tier pro` showed `8.5M` tokens saved (`49.4%`) across `1,664` commands in a Bash-heavy workflow. Savings vary by workload and session shape.
+
 Rollback:
 
 ```bash
