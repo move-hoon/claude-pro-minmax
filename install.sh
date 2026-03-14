@@ -304,8 +304,13 @@ fi
 if [ "$HAS_EXISTING_RTK_HOOK" = true ]; then
   echo "RTK Update Note:"
   echo "  An RTK hook was detected before this CPMM update."
-  echo "  Because CPMM reinstalled ~/.claude/settings.json, re-check RTK hook order and timeout."
-  echo "  Run: cpmm doctor"
+  if [ "${CPMM_SETUP_WRAPPER:-}" = "1" ]; then
+    echo "  cpmm setup will restore the managed RTK hook order and timeout after rewriting settings."
+    echo "  Run: cpmm doctor"
+  else
+    echo "  Re-run cpmm setup to restore the managed RTK hook order and timeout."
+    echo "  Or re-check ~/.claude/settings.json manually, then run: cpmm doctor"
+  fi
   echo ""
 fi
 echo "Language:"
