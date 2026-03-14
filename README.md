@@ -16,14 +16,14 @@ CPMM helps Pro users complete more verified tasks before reset through model rou
 
 > **Already installed? Start here: [User Guide](docs/USER-MANUAL.md)**
 >
-> **New in v1.3.0:** Optional RTK integration for Bash-heavy output reduction.
+> **New in v1.3.1:** `cpmm setup` now restores the managed RTK hook order and timeout for users who already enabled RTK.
 
 ---
 
 > [!TIP]
 > **🚀 3-Second Summary: Why use this?**
 > 1.  **Batch Execution:** Use `/do` to keep implementation and verification in one flow, and escalate to `/do-sonnet`/`/do-opus` only when needed.
-> 2.  **Output Cost Control:** Use response budgets, CLI filtering, and optional RTK for Bash-heavy output reduction.
+> 2.  **Output Cost Control:** Use response budgets, CLI filtering, and optional RTK to keep Bash output from inflating Claude input context.
 > 3.  **Local Safety Rails:** Local hooks and atomic rollback help you recover quickly on failure.
 
 ---
@@ -52,7 +52,7 @@ cpmm setup
 cpmm doctor
 ```
 
-> **v1.3.0 note:** `cpmm setup` now attempts RTK installation when supported. RTK activation remains opt-in.
+> **v1.3.1 note:** `cpmm setup` still attempts RTK installation when supported. RTK activation remains opt-in, but once enabled CPMM now restores the managed hook order and timeout automatically.
 
 Dependency policy:
 - `required`: `jq`, `mgrep`, `tmux`
@@ -101,16 +101,18 @@ Dependency policy:
 Project initialization tip:
 - Before running `claude`, initialize your project with templates in `project-templates/` (not copied into `~/.claude`).
 
-### 5. Bash Output Optimization (RTK)
+### 5. Bash Command-Output Filtering (RTK)
 
-CPMM supports RTK as an **optional output-optimization layer** for Bash-heavy workflows. `cpmm setup` attempts to install the RTK binary, but CPMM does **not** enable the RTK hook by default.
+CPMM supports RTK as an **optional Bash command-output filtering layer** for Bash-heavy workflows. `cpmm setup` attempts to install the RTK binary, but CPMM does **not** enable the RTK hook by default.
 
-We’re shipping RTK as an official optional integration because it fits CPMM’s output-control direction, preserves CPMM-first safety hook ordering, and has already shown meaningful real-world savings in Bash-heavy workflows. CPMM still keeps it opt-in so hook behavior stays predictable and easier to debug.
+We’re shipping RTK as an official optional integration because it reduces noisy command output before that output expands Claude’s input context in Bash-heavy workflows. CPMM documents and validates the recommended hook order, where CPMM’s critical-action check should run before RTK’s rewrite hook. The integration remains opt-in so hook behavior stays predictable and easier to debug.
 
 Recommended opt-in flow:
 
 ```bash
 rtk init -g --hook-only
+# if RTK was enabled, cpmm setup restores the managed hook order + timeout
+cpmm setup
 cpmm doctor
 ```
 
@@ -120,7 +122,8 @@ Recommended `PreToolUse` order in `~/.claude/settings.json`:
 
 Update note:
 - `cpmm setup` rewrites `~/.claude/settings.json` on update.
-- If you opt into RTK, re-check hook order and timeout after each CPMM update, then run `cpmm doctor`.
+- If RTK was already enabled before `cpmm setup`, CPMM restores the managed RTK hook order and `timeout: 10` automatically after rewriting settings.
+- Run `cpmm doctor` after setup if you want to verify the managed RTK state.
 
 Recommended verification:
 - Run `/hooks` and confirm both CPMM and RTK hooks are loaded
@@ -128,7 +131,7 @@ Recommended verification:
 - Run `cpmm doctor`
 - After real Bash-heavy sessions, inspect `rtk gain --quota --tier pro`
 
-Public example: in a [community RTK integration report](https://github.com/move-hoon/claude-pro-minmax/issues/3), `rtk gain --quota --tier pro` showed `8.5M` tokens saved (`49.4%`) across `1,664` commands in a Bash-heavy workflow. Savings vary by workload and session shape.
+Public example: in a [community RTK integration report](https://github.com/move-hoon/claude-pro-minmax/issues/3), `rtk gain --quota --tier pro` reported `8.5M` input tokens saved (`49.4%`) across `1,664` commands in a Bash-heavy workflow. Savings vary by workload and session shape.
 
 Rollback:
 
@@ -465,7 +468,7 @@ To add a new runtime, copy and implement `scripts/runtime/adapters/_template.sh`
 
 A: Anthropic's exact quota algorithm is not public. Optimization is based on three pillars:
 - **Low-cost model-first path**: Start implementation with Haiku, and escalate to Sonnet/Opus only when needed.
-- **Output-cost awareness**: Output tokens are priced higher than input, so response budgets/filtering reduce payload.
+- **Output-cost awareness**: Output-heavy turns tend to cost more, so response budgets and filtering help keep payloads smaller.
 - **Workflow simplification**: Use `/do` and `/plan` by task type to avoid unnecessary high-cost turns.
 
 For measured evidence, see [docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.md).

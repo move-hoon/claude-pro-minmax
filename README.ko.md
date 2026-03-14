@@ -16,14 +16,14 @@ CPMM은 모델 라우팅, 출력 제어, 로컬 안전장치로 리셋 전까지
 
 > **설치 완료했다면 여기서 시작하세요: [사용자 가이드](docs/USER-MANUAL.ko.md)**
 >
-> **New in v1.3.0:** Bash-heavy 출력 축약을 위한 RTK 선택 통합.
+> **New in v1.3.1:** RTK를 이미 켜둔 사용자에 대해 `cpmm setup`이 관리된 hook 순서와 timeout을 자동 복원합니다.
 
 ---
 
 > [!TIP]
 > **🚀 3초 요약: 왜 이걸 써야 하나요?**
 > 1.  **배치 실행:** `/do`로 구현-검증을 한 흐름에서 처리하고, 필요할 때만 `/do-sonnet`/`/do-opus`로 승격합니다.
-> 2.  **출력 비용 제어:** 응답 예산, CLI 필터링, 그리고 optional RTK로 Bash-heavy 출력량을 줄입니다.
+> 2.  **출력 비용 제어:** 응답 예산, CLI 필터링, 그리고 optional RTK로 Bash 출력이 Claude 입력 컨텍스트를 불필요하게 키우지 않도록 합니다.
 > 3.  **로컬 안전장치:** 로컬 Hook + 원자적 롤백으로 실패 시 빠르게 복구합니다.
 
 ---
@@ -52,7 +52,7 @@ cpmm setup
 cpmm doctor
 ```
 
-> **v1.3.0 참고:** `cpmm setup`은 지원 환경에서 RTK 설치를 시도합니다. RTK 활성화는 여전히 opt-in입니다.
+> **v1.3.1 참고:** `cpmm setup`은 지원 환경에서 RTK 설치를 계속 시도합니다. RTK 활성화는 여전히 opt-in이지만, 한 번 켠 뒤에는 CPMM이 관리된 hook 순서와 timeout을 자동 복원합니다.
 
 의존성 정책:
 - `required`: `jq`, `mgrep`, `tmux`
@@ -101,16 +101,18 @@ cpmm doctor
 프로젝트 초기화 팁:
 - `claude` 실행 전에 `project-templates/`를 참고해 프로젝트를 초기화하세요. (설치기는 `project-templates`를 `~/.claude`로 복사하지 않습니다.)
 
-### 5. Bash 출력 최적화 (RTK)
+### 5. Bash 명령 출력 필터링 (RTK)
 
-RTK는 CPMM이 지원하는 **선택적 출력 최적화 계층**입니다. `cpmm setup`은 RTK 바이너리 설치를 시도하지만, RTK hook은 기본 활성화하지 않습니다.
+RTK는 CPMM이 지원하는 **선택적 Bash 명령 출력 필터링 계층**입니다. `cpmm setup`은 RTK 바이너리 설치를 시도하지만, RTK hook은 기본 활성화하지 않습니다.
 
-RTK를 이번 릴리스에 선택 통합으로 넣은 이유는 CPMM의 출력 제어 방향과 잘 맞고, CPMM safety hook 우선 순서를 유지하면서도 Bash-heavy 워크플로우에서 이미 유의미한 실사용 절감 신호가 확인됐기 때문입니다. 다만 hook 동작을 예측 가능하고 디버깅 가능하게 유지하기 위해 default-on이 아니라 opt-in으로 제공합니다.
+RTK를 이번 릴리스에 선택 통합으로 넣은 이유는, Bash-heavy 워크플로우에서 긴 명령 출력이 Claude 입력 컨텍스트로 다시 들어가기 전에 이를 줄여 주기 때문입니다. CPMM은 권장 hook 순서를 문서화하고 `cpmm doctor`로 점검하며, 그 순서에서는 CPMM의 critical-action check가 RTK rewrite hook보다 먼저 실행되어야 합니다. 다만 hook 동작을 예측 가능하고 디버깅 가능하게 유지하기 위해 default-on이 아니라 opt-in으로 제공합니다.
 
 권장 opt-in 절차:
 
 ```bash
 rtk init -g --hook-only
+# RTK를 켠 뒤에는 cpmm setup이 관리된 hook 순서와 timeout을 복원
+cpmm setup
 cpmm doctor
 ```
 
@@ -120,7 +122,8 @@ cpmm doctor
 
 업데이트 참고:
 - `cpmm setup`은 업데이트 시 `~/.claude/settings.json`을 다시 씁니다.
-- RTK를 opt-in으로 사용 중이면 CPMM 업데이트 후 hook 순서와 timeout을 다시 확인하고, `cpmm doctor`를 다시 실행하세요.
+- `cpmm setup` 전에 RTK가 이미 켜져 있었다면, CPMM이 설정 재작성 뒤에 관리된 RTK hook 순서와 `timeout: 10`을 자동 복원합니다.
+- 관리된 RTK 상태를 확인하려면 setup 뒤에 `cpmm doctor`를 실행하세요.
 
 권장 검증:
 - `/hooks`에서 CPMM hook과 RTK hook이 모두 로드되는지 확인
@@ -128,7 +131,7 @@ cpmm doctor
 - `cpmm doctor` 실행
 - 실제 Bash-heavy 세션 후 `rtk gain --quota --tier pro` 확인
 
-공개된 [RTK 통합 사용자 사례](https://github.com/move-hoon/claude-pro-minmax/issues/3)에서는 `rtk gain --quota --tier pro` 기준으로 Bash-heavy 워크플로우에서 `1,664`개 명령 동안 `8.5M` 토큰 절감(`49.4%`)이 보고되었습니다. 절감률은 작업 부하와 세션 형태에 따라 달라질 수 있습니다.
+공개된 [RTK 통합 사용자 사례](https://github.com/move-hoon/claude-pro-minmax/issues/3)에서는 `rtk gain --quota --tier pro` 기준으로 Bash-heavy 워크플로우에서 `1,664`개 명령 동안 입력 토큰 `8.5M` 절감(`49.4%`)이 보고되었습니다. 절감률은 작업 부하와 세션 형태에 따라 달라질 수 있습니다.
 
 롤백:
 
@@ -465,7 +468,7 @@ claude-pro-minmax
 
 A: Anthropic의 정확한 quota 알고리즘은 공개되지 않았습니다. 세 가지 축으로 최적화합니다:
 - **저비용 모델 우선 경로**: 기본 구현은 Haiku 중심으로 시작하고 필요 시에만 Sonnet/Opus로 승격합니다.
-- **출력 비용 인식**: Output 토큰은 Input 대비 단가가 높아 응답 예산/필터링으로 payload를 줄입니다.
+- **출력 비용 인식**: 출력이 많은 턴일수록 비용 부담이 커지는 경향이 있으므로, 응답 예산과 필터링으로 payload를 줄입니다.
 - **작업 흐름 단순화**: `/do`와 `/plan`을 상황에 맞게 분리해 불필요한 고비용 턴을 줄입니다.
 
 근거 실측값은 [docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md](docs/CORE_STRATEGY_EXPERIMENT_ARCHIVE.ko.md)를 참고하세요.

@@ -84,13 +84,14 @@
 활성화:
 ```bash
 rtk init -g --hook-only
+cpmm setup
 cpmm doctor
 ```
 
 권장 검증:
 1. `/hooks`에서 CPMM hook과 RTK hook이 모두 보이는지 확인
 2. 위험 명령이 여전히 CPMM에서 먼저 차단되는지 확인
-3. `cpmm doctor`로 hook 순서 / timeout 안내 확인
+3. `cpmm doctor`로 CPMM이 RTK hook 순서 / timeout을 복원했는지 확인
 4. 실제 세션 후 아래 명령으로 효과 확인
    ```bash
    rtk gain --quota --tier pro

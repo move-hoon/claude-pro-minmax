@@ -84,13 +84,14 @@ Use when: your workflow is Bash-heavy (`git`, test runners, builds) and you want
 Enable:
 ```bash
 rtk init -g --hook-only
+cpmm setup
 cpmm doctor
 ```
 
 Recommended verification:
 1. Run `/hooks` and confirm both CPMM and RTK hooks are visible.
 2. Confirm a dangerous command is still blocked by CPMM first.
-3. Run `cpmm doctor` and check hook order / timeout guidance.
+3. Run `cpmm doctor` and confirm CPMM restored the RTK hook order / timeout.
 4. After real sessions, inspect:
    ```bash
    rtk gain --quota --tier pro
